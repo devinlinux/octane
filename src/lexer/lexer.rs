@@ -42,12 +42,29 @@ impl Lexer {
         let tok = match self.ch {
             0 => Token::Eof,
 
-            b'=' => Token::Assign,
+            b'=' => {
+                if self.peek() == b'=' {
+                    self.read_char();
+                    Token::Eq
+                } else {
+                    Token::Assign
+                }
+            },
             b'+' => Token::Plus,
             b'-' => Token::Dash,
             b'*' => Token::Asterisk,
             b'/' => Token::Slash,
-            b'!' => Token::Bang,
+            b'!' => {
+                if self.peek() == b'=' {
+                    self.read_char();
+                    Token::NotEq
+                } else {
+                    Token::Bang
+                }
+            },
+
+            b'>' => Token::GT,
+            b'<' => Token::LT,
 
             b',' => Token::Comma,
             b';' => Token::Semicolon,
@@ -82,6 +99,14 @@ impl Lexer {
 
         self.read_char();
         tok
+    }
+
+    fn peek(&self) -> u8 {
+        if self.read_pos >= self.input.len() {
+            0
+        } else {
+            self.input[self.read_pos]
+        }
     }
 
     fn read_ident(&mut self) -> String {

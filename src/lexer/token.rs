@@ -16,6 +16,11 @@ pub enum Token {
     Slash,
     Bang,
 
+    GT,
+    LT,
+    Eq,
+    NotEq,
+
     //  Delimiters
     Comma,
     Semicolon,
@@ -48,6 +53,11 @@ impl std::fmt::Display for Token {
             Token::Asterisk => write!(f, "Asterisk"),
             Token::Slash => write!(f, "Slash"),
             Token::Bang => write!(f, "Bang"),
+
+            Token::GT => write!(f, "Greater than"),
+            Token::LT => write!(f, "Less than"),
+            Token::Eq => write!(f, "Equal"),
+            Token::NotEq => write!(f, "Not Equal"),
 
             Token::Comma => write!(f, "Comma"),
             Token::Semicolon => write!(f, "Semicolon"),
