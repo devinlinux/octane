@@ -4,12 +4,9 @@ pub fn file_to_string(path: &str) -> String {
     match std::fs::read_to_string(path) {
         Ok(contents) => contents,
         Err(err) => {
-            match err.kind() {
-                ErrorKind::NotFound => panic!("File not found: {path}"),
-                ErrorKind::PermissionDenied => panic!("Permission denied to read file: {path}"),
-                _ => panic!("Error reading file {path}: {err}"),
-            }
-        }
+            handle_io_error(path, err);
+            String::new()
+        },
     }
 }
 
@@ -27,11 +24,16 @@ pub fn file_lines(path: &str) -> Vec<String> {
             lines
         },
         Err(err) => {
-            match err.kind() {
-                ErrorKind::NotFound => panic!("File not found: {path}"),
-                ErrorKind::PermissionDenied => panic!("Permission denied to read file: {path}"),
-                _ => panic!("Error reading file {path}: {err}"),
-            }
-        }
+            handle_io_error(path, err);
+            Vec::new()
+        },
+    }
+}
+
+fn handle_io_error(path: &str, err: std::io::Error) {
+    match err.kind() {
+        ErrorKind::NotFound => panic!("File not found {path}"),
+        ErrorKind::PermissionDenied => panic!("Inadequate permissions to read file {path}"),
+        _ => panic!("Error reading file {path}: {err}"),
     }
 }
