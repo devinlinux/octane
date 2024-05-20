@@ -147,9 +147,10 @@ mod tests {
     fn test_next_token() {
         let input = r#"
             let x = 5_000_000;
-        let y = 3.14;
-        if else fn
+            let y = 3.1_4;
+            if else fn
             != == = ~ ! - + < >, * /
+            {}[]()
                 "#;
         let mut lexer = Lexer::new(input.into());
 
@@ -179,8 +180,14 @@ mod tests {
             Token::Comma,
             Token::Asterisk,
             Token::Slash,
+            Token::LSquirly,
+            Token::RSquirly,
+            Token::LBrace,
+            Token::RBrace,
+            Token::LParen,
+            Token::RParen,
             Token::Eof,
-            ];
+        ];
 
         for token in tokens {
             let next = lexer.next();
