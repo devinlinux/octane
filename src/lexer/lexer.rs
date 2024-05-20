@@ -1,5 +1,6 @@
 use crate::lexer::Token;
 
+#[derive(Debug)]
 pub struct Lexer {
     input: Vec<u8>,
     pos: usize,
@@ -81,6 +82,8 @@ impl Lexer {
                 match ident.as_str() {
                     "fn" => Token::Function,
                     "let" => Token::Let,
+                    "if" => Token::If,
+                    "else" => Token::Else,
                     _ => Token::Ident(ident),
                 }
             },
@@ -88,10 +91,9 @@ impl Lexer {
                 let mut num = self.read_num();
                 num = num.replace("_", "");
                 if num.contains(".") {
-                    Token::Float(num.parse::<f64>().unwrap())
-                } else {
-                    Token::Int(num.parse::<i64>().unwrap())
+                    return Token::Float(num.parse::<f64>().unwrap())
                 }
+                return Token::Int(num.parse::<i64>().unwrap())
             }
 
             _ => Token::Illegal(self.ch),
@@ -135,4 +137,55 @@ fn is_valid_var_char(ch: u8) -> bool {
 
 fn is_valid_num_char(ch: u8) -> bool {
     ch.is_ascii_digit() || ch == b'.' || ch == b'_'
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_next_token() {
+        let input = r#"
+            let x = 5_000_000;
+        let y = 3.14;
+        if else fn
+            != == = ~ ! - + < >, * /
+                "#;
+        let mut lexer = Lexer::new(input.into());
+
+        let tokens = vec![
+            Token::Let,
+            Token::Ident("x".to_string()),
+            Token::Assign,
+            Token::Int(5000000),
+            Token::Semicolon,
+            Token::Let,
+            Token::Ident("y".to_string()),
+            Token::Assign,
+            Token::Float(3.14),
+            Token::Semicolon,
+            Token::If,
+            Token::Else,
+            Token::Function,
+            Token::NotEq,
+            Token::Eq,
+            Token::Assign,
+            Token::Illegal(b'~'),
+            Token::Bang,
+            Token::Dash,
+            Token::Plus,
+            Token::LT,
+            Token::GT,
+            Token::Comma,
+            Token::Asterisk,
+            Token::Slash,
+            Token::Eof,
+            ];
+
+        for token in tokens {
+            let next = lexer.next();
+            println!("expected: {token}, got: {next}");
+            assert_eq!(token, next);
+        }
+    }
 }

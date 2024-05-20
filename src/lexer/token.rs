@@ -1,4 +1,4 @@
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Token {
     Illegal(u8),
     Eof,
@@ -35,11 +35,14 @@ pub enum Token {
     //  Keywords
     Function,
     Let,
+    If,
+    Else,
 }
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            //  identifiers + literals
             Token::Illegal(ch) => write!(f, "Illegal( {} )", ch),
             Token::Eof => write!(f, "Eof"),
 
@@ -47,6 +50,7 @@ impl std::fmt::Display for Token {
             Token::Int(int) => write!(f, "Int( {} )", int),
             Token::Float(float) => write!(f, "Float( {} )", float),
 
+            //  Operators
             Token::Assign => write!(f, "Assign"),
             Token::Plus => write!(f, "Plus"),
             Token::Dash => write!(f, "Dash"),
@@ -59,6 +63,7 @@ impl std::fmt::Display for Token {
             Token::Eq => write!(f, "Equal"),
             Token::NotEq => write!(f, "Not Equal"),
 
+            //  Delimiters
             Token::Comma => write!(f, "Comma"),
             Token::Semicolon => write!(f, "Semicolon"),
 
@@ -69,8 +74,11 @@ impl std::fmt::Display for Token {
             Token::LSquirly => write!(f, "LSquirly"),
             Token::RSquirly => write!(f, "RSquirly"),
 
+            //  Keywords
             Token::Function => write!(f, "Function"),
             Token::Let => write!(f, "Let"),
+            Token::If => write!(f, "If"),
+            Token::Else => write!(f, "Else"),
         }
     }
 }
