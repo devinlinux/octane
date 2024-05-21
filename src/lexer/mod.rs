@@ -9,16 +9,16 @@ use std::io::{ Write, BufRead };
 const REPL_PROMPT: &str = ">> ";
 const EXIT_CMD: &str = "EXIT()";
 
-pub fn tokenization_repl() -> std::io::Result<()> {
+pub fn tokenization_repl() {
     let stdin = std::io::stdin();
     let mut stdin_lock = stdin.lock();
 
     loop {
         print!("{REPL_PROMPT}");
-        std::io::stdout().flush()?;
+        std::io::stdout().flush().expect("Failed to flush standard out");
 
         let mut input = String::new();
-        stdin_lock.read_line(&mut input)?;
+        stdin_lock.read_line(&mut input).expect("Failed to read line");
 
         if input.trim() == EXIT_CMD {
             break;
@@ -35,8 +35,6 @@ pub fn tokenization_repl() -> std::io::Result<()> {
             }
         }
     }
-
-    Ok(())
 }
 
 pub fn tokenize_file(path: &str) -> Vec<Token> {
@@ -44,7 +42,7 @@ pub fn tokenize_file(path: &str) -> Vec<Token> {
     tokenize_string(contents)
 }
 
-pub fn tokenize_string(str: String) -> Vec<Token> {
+fn tokenize_string(str: String) -> Vec<Token> {
     let mut lexer = Lexer::new(str);
     let mut tokens = Vec::new();
 

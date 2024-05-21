@@ -43,7 +43,7 @@ impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             //  identifiers + literals
-            Token::Illegal(ch) => write!(f, "Illegal( {} )", ch),
+            Token::Illegal(byte) => write!(f, "Illegal( {} )", *byte as char),
             Token::Eof => write!(f, "Eof"),
 
             Token::Ident(ident) => write!(f, "Ident( {} )", ident),

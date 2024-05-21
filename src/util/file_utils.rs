@@ -1,4 +1,4 @@
-use std::io::{ BufRead, BufReader, ErrorKind };
+use std::io::ErrorKind;
 
 pub fn file_to_string(path: &str) -> String {
     match std::fs::read_to_string(path) {
@@ -6,26 +6,6 @@ pub fn file_to_string(path: &str) -> String {
         Err(err) => {
             handle_io_error(path, err);
             String::new()
-        },
-    }
-}
-
-pub fn file_lines(path: &str) -> Vec<String> {
-    match std::fs::File::open(path) {
-        Ok(file) => {
-            let reader = BufReader::new(file);
-            let mut lines = Vec::new();
-            for line in reader.lines() {
-                match line {
-                    Ok(contents) => lines.push(contents),
-                    Err(err) => panic!("Error reading line from file {path}: {err}"),
-                }
-            }
-            lines
-        },
-        Err(err) => {
-            handle_io_error(path, err);
-            Vec::new()
         },
     }
 }

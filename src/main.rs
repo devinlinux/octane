@@ -1,24 +1,29 @@
 mod lexer;
 mod util;
 
-use clap::{ Command, Arg, ArgAction };
+use std::env;
 
 fn main() {
-    let matches = Command::new("octane")
-        .about("The OCTANE compiler")
-        .version("0.1.0")
-        .author("Michael Bobrowski")
-        .arg(
-            Arg::new("file")
-            .index(1)
-            .required(false)
-            .help("Specifies a file to compile"),
-        )
-        .arg(
-            Arg::new("repl")
-            .short('r')
-            .long("repl")
-            .help("Runs a REPL"),
-        )
-        .get_matches();
+    if let Err(e)  = _main() {
+        eprintln!("Error: {e:#?}");
+        std::process::exit(1);
+    }
+}
+
+fn _main<'a>() -> Result<(), &'a str> {
+    let args: Vec<String> = env::args().collect();
+
+    match args.len() {
+        1 => Err("Usage octane <file path> | octane --repl"),
+        _ => match args[1].as_str() {
+            "--repl" => {
+                lexer::tokenization_repl();
+                Ok(())
+            },
+            _ => {
+                lexer::tokenize_file(&args[1]).iter().for_each(|token| println!("{token}"));
+                Ok(())
+            }
+        }
+    }
 }
