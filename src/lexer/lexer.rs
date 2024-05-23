@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::lexer::Token;
 
 #[derive(Debug)]
@@ -6,6 +7,9 @@ pub struct Lexer {
     pos: usize,
     read_pos: usize,
     ch: u8,
+
+    ident_table: HashMap<u32, String>,
+    ident_idx: u32,
 }
 
 impl Lexer {
@@ -15,6 +19,9 @@ impl Lexer {
             pos: 0,
             read_pos: 0,
             ch: 0,
+
+            ident_table: HashMap::default(),
+            ident_idx: 0,
         };
         lexer.read_char();
 
@@ -84,7 +91,10 @@ impl Lexer {
                     "let" => Token::Let,
                     "if" => Token::If,
                     "else" => Token::Else,
-                    _ => Token::Ident(ident),
+                    _ => {
+                        self.register_ident(ident);
+                        Token::Ident(self.ident_idx - 1)
+                    },
                 }
             },
             b'0'..=b'9' => {
@@ -128,6 +138,15 @@ impl Lexer {
             self.read_char()
         }
         String::from_utf8_lossy(&self.input[start..self.pos]).to_string()
+    }
+
+    fn register_ident(&mut self, ident: String) {
+        self.ident_table.insert(self.ident_idx, ident);
+        self.ident_idx += 1;
+    }
+
+    pub fn lookup_ident(&self, key: u32) -> Option<&String> {
+        self.ident_table.get(&key)
     }
 }
 

@@ -50,11 +50,14 @@ impl Parser {
     }
 
     fn parse_let_statement(&mut self) -> Option<LetStatement> {
-        if !self.assert_peek(&Token::Ident(String::new())) {
+        if !self.assert_peek(&Token::Ident(u32::MAX)) {
             return None
         }
 
-        let name = self.extract_ident();
+        let name = match self.curr_token {
+            Token::Ident(name) => name,
+            _ => unreachable!("Identity as Ident should have already been confirmed"),
+        };
 
         if !self.assert_peek(&Token::Assign) {
             return None
@@ -64,7 +67,7 @@ impl Parser {
             self.next();
         }
 
-        Some(LetStatement::new(&name, Expression::Temp))
+        Some(LetStatement::new(name, Expression::Temp))
     }
 }
 
@@ -94,12 +97,5 @@ impl Parser {
             return true
         }
         false
-    }
-
-    fn extract_ident(&self) -> &String {
-        match &self.curr_token {
-            Token::Ident(name) => name,
-            _ => unreachable!("Identity as ident should have already been confirmed"),
-        }
     }
 }

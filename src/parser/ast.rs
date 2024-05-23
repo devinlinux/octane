@@ -1,32 +1,32 @@
 use crate::lexer::Token;
 
-pub struct Program<'a> {
-    statements: Vec<Statement<'a>>,
+pub struct Program {
+    statements: Vec<Statement>,
 }
 
-impl<'a> Default for Program<'a> {
-    fn default() -> Program<'a> {
+impl Default for Program {
+    fn default() -> Program {
         Self {
             statements: Vec::new(),
         }
     }
 }
 
-pub enum Statement<'a> {
-    Let(LetStatement<'a>),
+pub enum Statement {
+    Let(LetStatement),
 }
 
 pub enum Expression {
     Temp,
 }
 
-pub struct Identifier<'a> {
+pub struct Identifier {
     token: Token,
-    value: &'a str,
+    value: u32,
 }
 
-impl<'a> Identifier<'a> {
-    pub fn new(token: Token, value: &'a str) -> Identifier<'a> {
+impl Identifier {
+    pub fn new(token: Token, value: u32) -> Identifier {
         Self {
             token,
             value,
@@ -34,22 +34,22 @@ impl<'a> Identifier<'a> {
     }
 }
 
-pub struct LetStatement<'a> {
-    name: Identifier<'a>,
+pub struct LetStatement {
+    name: Identifier,
     value: Expression,
 }
 
-impl<'a> Default for LetStatement<'a> {
-    fn default() -> LetStatement<'a> {
+impl Default for LetStatement {
+    fn default() -> LetStatement {
         Self {
-            name: Identifier::new(Token::Let, ""),
+            name: Identifier::new(Token::Let, u32::MAX),
             value: Expression::Temp,
         }
     }
 }
 
-impl<'a> LetStatement<'a> {
-    pub fn new(name: &'a String, value: Expression) -> LetStatement<'a> {
+impl LetStatement {
+    pub fn new(name: u32, value: Expression) -> LetStatement {
         Self {
             name: Identifier::new(Token::Let, name),
             value,
