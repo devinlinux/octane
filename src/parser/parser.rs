@@ -1,5 +1,5 @@
 use crate::lexer::{ Lexer, Token };
-use crate::parser::ast::{ Program, Statement, LetStatement, Identifier, Expression };
+use crate::parser::ast::{ Program, Statement, LetStatement, Expression };
 
 pub struct Parser {
     lexer: Lexer,
@@ -27,11 +27,11 @@ impl Parser {
     }
 
     pub fn parse_program(&mut self) -> Program {
-        let mut program = Program::default();
+        let program = Program::default();
 
         while self.curr_token != Token::Eof {
-            let statement = self.parse_statement();
-            
+            let _statement = self.parse_statement();
+
         }
 
         program
@@ -44,19 +44,17 @@ impl Parser {
         match self.curr_token {
             Token::Let => self.parse_let_statement(),
             _ => None,
-        }
+        };
+
+        None
     }
 
     fn parse_let_statement(&mut self) -> Option<LetStatement> {
-
         if !self.assert_peek(&Token::Ident(String::new())) {
             return None
         }
 
-        let name = match self.curr_token {
-            Token::Ident(ref name) => name,
-            _ => unreachable!("Check for ident token has already been performed"),
-        };
+        let name = self.extract_ident();
 
         if !self.assert_peek(&Token::Assign) {
             return None
@@ -72,7 +70,6 @@ impl Parser {
 
 //  helper methods
 impl Parser {
-    #[inline]
     fn curr_token_is(&self, token: &Token) -> bool {
         match self.curr_token {
             Token::Ident(_) => matches!(token, Token::Ident(_)),
@@ -82,7 +79,6 @@ impl Parser {
         }
     }
 
-    #[inline]
     fn peek_token_is(&self, token: &Token) -> bool {
         match self.peek_token {
             Token::Ident(_) => matches!(token, Token::Ident(_)),
@@ -98,5 +94,12 @@ impl Parser {
             return true
         }
         false
+    }
+
+    fn extract_ident(&self) -> &String {
+        match &self.curr_token {
+            Token::Ident(name) => name,
+            _ => unreachable!("Identity as ident should have already been confirmed"),
+        }
     }
 }

@@ -49,7 +49,7 @@ impl<'a> Default for LetStatement<'a> {
 }
 
 impl<'a> LetStatement<'a> {
-    pub fn new(name: &'a str, value: Expression) -> LetStatement<'a> {
+    pub fn new(name: &'a String, value: Expression) -> LetStatement<'a> {
         Self {
             name: Identifier::new(Token::Let, name),
             value,
