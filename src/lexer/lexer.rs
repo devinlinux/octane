@@ -175,12 +175,12 @@ mod tests {
 
         let tokens = vec![
             Token::Let,
-            Token::Ident("x".to_string()),
+            Token::Ident(0),
             Token::Assign,
             Token::Int(5000000),
             Token::Semicolon,
             Token::Let,
-            Token::Ident("y".to_string()),
+            Token::Ident(1),
             Token::Assign,
             Token::Float(3.14),
             Token::Semicolon,
