@@ -1,5 +1,5 @@
 use crate::lexer::{ Lexer, Token };
-use crate::parser::ast::{ Program, Statement, LetStatement, Expression };
+use crate::parser::ast::{ Program, Statement, LetStatement, ReturnStatement, Expression };
 
 pub struct Parser {
     lexer: Lexer,
@@ -46,6 +46,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token {
             Token::Let => self.parse_let_statement().map(Statement::Let),
+            Token::Return => self.parse_return_statement().map(Statement::Return),
             _ => None,
         }
     }
@@ -69,6 +70,16 @@ impl Parser {
         }
 
         Some(LetStatement::new(name, Expression::Temp))
+    }
+
+    fn parse_return_statement(&mut self) -> Option<ReturnStatement> {
+        self.next();
+
+        while !self.curr_token_is(&Token::Semicolon) {
+            self.next();
+        }
+
+        Some(ReturnStatement::new(Expression::Temp))
     }
 }
 

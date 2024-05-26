@@ -25,11 +25,20 @@ impl Program {
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(LetStatement),
+    Return(ReturnStatement),
 }
 
 impl Statement {
     pub fn try_into_let(&self) -> Result<&LetStatement, &Self> {
         if let Self::Let(stmt) = self {
+            Ok(stmt)
+        } else {
+            Err(self)
+        }
+    }
+
+    pub fn try_into_return(&self) -> Result<&ReturnStatement, &Self> {
+        if let Self::Return(stmt) = self {
             Ok(stmt)
         } else {
             Err(self)
@@ -82,5 +91,18 @@ impl LetStatement {
 
     pub fn name(&self) -> u32 {
         self.name.value
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ReturnStatement {
+    value: Expression,
+}
+
+impl ReturnStatement {
+    pub fn new(value: Expression) -> ReturnStatement {
+        Self {
+            value
+        }
     }
 }
