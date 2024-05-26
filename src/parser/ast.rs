@@ -106,3 +106,13 @@ impl ReturnStatement {
         }
     }
 }
+
+pub enum Precedence {
+    Lowest,
+    Equality,
+    Comparison,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+}
