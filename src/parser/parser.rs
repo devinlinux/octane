@@ -27,11 +27,14 @@ impl Parser {
     }
 
     pub fn parse_program(&mut self) -> Program {
-        let program = Program::default();
+        let mut program = Program::default();
 
         while self.curr_token != Token::Eof {
-            let _statement = self.parse_statement();
-
+            match self.parse_statement() {
+                Some(statement) => program.add_statement(statement),
+                None => continue,
+            }
+            self.next();
         }
 
         program
@@ -42,11 +45,9 @@ impl Parser {
 impl Parser {
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token {
-            Token::Let => self.parse_let_statement(),
+            Token::Let => self.parse_let_statement().map(Statement::Let),
             _ => None,
-        };
-
-        None
+        }
     }
 
     fn parse_let_statement(&mut self) -> Option<LetStatement> {
@@ -97,5 +98,41 @@ impl Parser {
             return true
         }
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_let_statement() {
+        let input = r#"
+            let x = 5;
+            let y = 7;
+            let z = 42;
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+
+        let expected_statements = vec![
+            Statement::Let(LetStatement::new(0, Expression::Temp)),
+            Statement::Let(LetStatement::new(1, Expression::Temp)),
+            Statement::Let(LetStatement::new(2, Expression::Temp)),
+        ];
+
+        let expected_names = vec![
+            "x",
+            "y",
+            "z",
+        ];
+
+        let program = parser.parse_program();
+        let statements = program.statements();
+        for ((expected_statement, expected_name), actual) in expected_statements.iter().zip(&expected_names).zip(statements) {
+            assert_eq!(expected_statement, actual);
+            let name = parser.lexer.lookup_ident(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Did not find identifier from index");
+            assert_eq!(name, expected_name);
+        }
     }
 }

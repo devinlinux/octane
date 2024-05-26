@@ -12,14 +12,37 @@ impl Default for Program {
     }
 }
 
+impl Program {
+    pub fn add_statement(&mut self, statement: Statement) {
+        self.statements.push(statement);
+    }
+
+    pub fn statements(&self) -> &Vec<Statement> {
+        &self.statements
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(LetStatement),
 }
 
+impl Statement {
+    pub fn try_into_let(&self) -> Result<&LetStatement, &Self> {
+        if let Self::Let(stmt) = self {
+            Ok(stmt)
+        } else {
+            Err(self)
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Temp,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Identifier {
     token: Token,
     value: u32,
@@ -34,6 +57,7 @@ impl Identifier {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct LetStatement {
     name: Identifier,
     value: Expression,
@@ -54,5 +78,9 @@ impl LetStatement {
             name: Identifier::new(Token::Let, name),
             value,
         }
+    }
+
+    pub fn name(&self) -> u32 {
+        self.name.value
     }
 }
