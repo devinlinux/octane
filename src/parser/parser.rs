@@ -140,10 +140,37 @@ mod tests {
 
         let program = parser.parse_program();
         let statements = program.statements();
+
+        assert_eq!(expected_statements.len(), statements.len());
         for ((expected_statement, expected_name), actual) in expected_statements.iter().zip(&expected_names).zip(statements) {
             assert_eq!(expected_statement, actual);
             let name = parser.lexer.lookup_ident(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Did not find identifier from index");
             assert_eq!(name, expected_name);
+        }
+    }
+
+    #[test]
+    fn test_parse_return_statement() {
+        let input = r#"
+            return 5;
+            return 7;
+            return 42;
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+
+        let expected_statements = vec![
+            Statement::Return(ReturnStatement::new(Expression::Temp)),
+            Statement::Return(ReturnStatement::new(Expression::Temp)),
+            Statement::Return(ReturnStatement::new(Expression::Temp)),
+        ];
+
+        let program = parser.parse_program();
+        let statements = program.statements();
+
+        assert_eq!(expected_statements.len(), statements.len());
+        for (expected, actual) in expected_statements.iter().zip(statements) {
+            assert_eq!(expected, actual);
         }
     }
 }

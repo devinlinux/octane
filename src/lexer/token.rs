@@ -37,6 +37,7 @@ pub enum Token {
     Let,
     If,
     Else,
+    Return,
 }
 
 impl Default for Token {
@@ -85,6 +86,7 @@ impl std::fmt::Display for Token {
             Token::Let => write!(f, "Let"),
             Token::If => write!(f, "If"),
             Token::Else => write!(f, "Else"),
+            Token::Return => write!(f, "Return"),
         }
     }
 }

@@ -91,6 +91,7 @@ impl Lexer {
                     "let" => Token::Let,
                     "if" => Token::If,
                     "else" => Token::Else,
+                    "return" => Token::Return,
                     _ => {
                         self.register_ident(ident);
                         Token::Ident(self.ident_idx - 1)
