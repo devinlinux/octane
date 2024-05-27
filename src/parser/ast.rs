@@ -38,14 +38,6 @@ impl Statement {
             Err(self)
         }
     }
-
-    pub fn try_into_return(&self) -> Result<&ReturnStatement, &Self> {
-        if let Self::Return(stmt) = self {
-            Ok(stmt)
-        } else {
-            Err(self)
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -134,7 +126,7 @@ impl Identifier {
 impl Parsable for Identifier {
     fn parse(parser: &mut Parser) -> Result<Identifier, String> {
         match parser.curr_token() {
-            Token::Ident(id) => Ok(Identifier::new(*id)),
+            Token::Ident(id) => Ok(Self(*id)),
             _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
         }
     }
@@ -143,6 +135,7 @@ impl Parsable for Identifier {
 #[derive(Debug, PartialEq)]
 pub struct IntegerLiteral(i64);
 
+#[cfg(test)]
 impl IntegerLiteral {
     pub fn new(value: i64) -> IntegerLiteral {
         Self(value)
@@ -167,6 +160,7 @@ impl Parsable for IntegerLiteral {
 #[derive(Debug, PartialEq)]
 pub struct FloatLiteral(f64);
 
+#[cfg(test)]
 impl FloatLiteral {
     pub fn new(value: f64) -> FloatLiteral {
         Self(value)
