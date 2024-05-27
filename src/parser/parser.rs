@@ -1,10 +1,12 @@
 use crate::lexer::{ Lexer, Token };
-use crate::parser::ast::{ Program, Statement, LetStatement, ReturnStatement, Expression };
+use crate::parser::ast::{ Program, Statement, LetStatement, ReturnStatement, Expression, Identifier, Precedence };
 
 pub struct Parser {
     lexer: Lexer,
     curr_token: Token,
     peek_token: Token,
+
+    errors: Vec<String>,
 }
 
 //  API and related methods
@@ -14,6 +16,8 @@ impl Parser {
             lexer,
             curr_token: Token::default(),
             peek_token: Token::default(),
+
+            errors: Vec::new(),
         };
         parser.next();
         parser.next();
@@ -39,6 +43,14 @@ impl Parser {
 
         program
     }
+
+    fn push_error(&mut self, msg: String) {
+        self.errors.push(msg);
+    }
+
+    pub fn curr_token(&self) -> &Token {
+        &self.curr_token
+    }
 }
 
 //  Statement parsing
@@ -47,7 +59,7 @@ impl Parser {
         match self.curr_token {
             Token::Let => self.parse_let_statement().map(Statement::Let),
             Token::Return => self.parse_return_statement().map(Statement::Return),
-            _ => self.parse_expression_statement(),
+            _ => self.parse_expression_statement().map(Statement::Expression),
         }
     }
 
@@ -86,11 +98,19 @@ impl Parser {
 //  Expression parsing
 impl Parser {
     fn parse_expression_statement(&mut self) -> Option<Expression> {
+        let expression = Expression::parse(self, Precedence::Lowest);
 
-    }
+        if self.peek_token_is(&Token::Semicolon) {
+            self.next();
+        }
 
-    fn parse_expression(&mut self) {
-
+        match expression {
+            Ok(expression) => Some(expression),
+            Err(err) => {
+                self.push_error(err);
+                None
+            },
+        }
     }
 }
 
@@ -183,5 +203,30 @@ mod tests {
         for (expected, actual) in expected_statements.iter().zip(statements) {
             assert_eq!(expected, actual);
         }
+    }
+
+    #[test]
+    fn test_parse_identifier_expression() {
+        let input = r#"
+            x;
+            y;
+            z;
+            "#;
+            let lexer = Lexer::new(input.into());
+            let mut parser = Parser::new(lexer);
+
+            let expected_statements = vec![
+                Statement::Expression(Expression::Identifier(Identifier::new(0))),
+                Statement::Expression(Expression::Identifier(Identifier::new(1))),
+                Statement::Expression(Expression::Identifier(Identifier::new(2))),
+            ];
+
+            let program = parser.parse_program();
+            let statements = program.statements();
+
+            assert_eq!(expected_statements.len(), statements.len());
+            for (expected, actual) in expected_statements.iter().zip(statements) {
+                assert_eq!(expected, actual);
+            }
     }
 }

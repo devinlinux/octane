@@ -1,4 +1,5 @@
 use crate::lexer::Token;
+use crate::parser::Parser;
 
 pub struct Program {
     statements: Vec<Statement>,
@@ -47,22 +48,39 @@ impl Statement {
     }
 }
 
+trait Parsable {
+    fn parse(parser: &mut Parser) -> Result<impl Parsable, String>;
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     Temp,
+    Identifier(Identifier),
+}
+
+impl Expression {
+    pub fn parse(parser: &mut Parser, precedence: Precedence) -> Result<Expression, String> {
+        match parser.curr_token() {
+            Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
+            _ => Err(format!("No parser available for token {}", parser.curr_token())),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Identifier {
-    token: Token,
-    value: u32,
-}
+pub struct Identifier(u32);
 
 impl Identifier {
-    pub fn new(token: Token, value: u32) -> Identifier {
-        Self {
-            token,
-            value,
+    pub fn new(value: u32) -> Identifier {
+        Self(value)
+    }
+}
+
+impl Parsable for Identifier {
+    fn parse(parser: &mut Parser) -> Result<Identifier, String> {
+        match parser.curr_token() {
+            Token::Ident(id) => Ok(Identifier::new(*id)),
+            _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
         }
     }
 }
@@ -76,7 +94,7 @@ pub struct LetStatement {
 impl Default for LetStatement {
     fn default() -> LetStatement {
         Self {
-            name: Identifier::new(Token::Let, u32::MAX),
+            name: Identifier::new(u32::MAX),
             value: Expression::Temp,
         }
     }
@@ -85,13 +103,13 @@ impl Default for LetStatement {
 impl LetStatement {
     pub fn new(name: u32, value: Expression) -> LetStatement {
         Self {
-            name: Identifier::new(Token::Let, name),
+            name: Identifier::new(name),
             value,
         }
     }
 
     pub fn name(&self) -> u32 {
-        self.name.value
+        self.name.0
     }
 }
 

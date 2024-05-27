@@ -1,3 +1,4 @@
 mod ast;
 mod parser;
-mod parser_errors;
+
+pub use parser::Parser;
