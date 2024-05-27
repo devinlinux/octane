@@ -8,6 +8,7 @@ use crate::parser::ast::{
     Identifier,
     IntegerLiteral,
     FloatLiteral,
+    PrefixOperator,
     Precedence
 };
 
@@ -253,12 +254,37 @@ mod tests {
             statement_assert_loop(parser.parse_program(), expected_statements)
     }
 
-    fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
-            let statements = program.statements();
+    #[test]
+    fn test_parse_prefix_operator() {
+        let input = r#"
+            -5;
+            !bad;
+            -42;
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
 
-            assert_eq!(expected_statements.len(), statements.len());
-            for (expected, actual) in expected_statements.iter().zip(statements) {
-                assert_eq!(expected, actual);
-            }
+        let expected_statements = vec![
+            Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Minus,
+                        Expression::IntegerLiteral(IntegerLiteral::new(5))
+            ))),
+            Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+                        Expression::Identifier(Identifier::new(1))
+            ))),
+            Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Minus,
+                        Expression::IntegerLiteral(IntegerLiteral::new(42))
+            ))),
+        ];
+
+        statement_assert_loop(parser.parse_program(), expected_statements)
+    }
+
+    fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
+        let statements = program.statements();
+
+        assert_eq!(expected_statements.len(), statements.len());
+        for (expected, actual) in expected_statements.iter().zip(statements) {
+            assert_eq!(expected, actual);
+        }
     }
 }
