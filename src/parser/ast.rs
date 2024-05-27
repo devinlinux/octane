@@ -101,6 +101,7 @@ pub enum Expression {
     Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
     FloatLiteral(FloatLiteral),
+    PrefixOperator(PrefixOperator),
 }
 
 impl Expression {
@@ -109,6 +110,7 @@ impl Expression {
             Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
             Token::Int(_) => IntegerLiteral::parse(parser).map(Expression::IntegerLiteral),
             Token::Float(_) => FloatLiteral::parse(parser).map(Expression::FloatLiteral),
+            Token::Bang | Token::Minus => PrefixOperator::parse(parser).map(Expression::PrefixOperator),
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
         }
     }
@@ -179,5 +181,39 @@ impl Parsable for FloatLiteral {
             },
             _ => unreachable!("Should only attempt to parse FloatLiteral on Float token"),
         }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PrefixOperator {
+    operator: Token,
+    rhs: Box<Expression>,
+}
+
+impl PrefixOperator {
+    pub fn new(operator: Token, rhs: Expression) -> PrefixOperator {
+        Self {
+            operator,
+            rhs: Box::new(rhs),
+        }
+    }
+}
+
+impl Parsable for PrefixOperator {
+    fn parse(parser: &mut Parser) -> Result<PrefixOperator, String> {
+        let operator: Token = match parser.curr_token() {
+            Token::Bang => {
+                Token::Bang
+            },
+            Token::Minus => {
+                Token::Minus
+            },
+            _ => unreachable!("Should only attempt to parse a PrefixOperator on a valid prefix operator"),
+        };
+
+        parser.next();
+        let rhs = Expression::parse(parser, Precedence::Prefix)?;
+
+        Ok(PrefixOperator::new(operator, rhs))
     }
 }

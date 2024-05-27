@@ -36,7 +36,7 @@ impl Parser {
     }
 
     #[inline]
-    fn next(&mut self) {
+    pub(super) fn next(&mut self) {
         self.curr_token = std::mem::replace(&mut self.peek_token, self.lexer.next());
     }
 
@@ -183,7 +183,15 @@ mod tests {
             "z",
         ];
 
-        statement_assert_loop(parser.parse_program(), expected_statements);
+        let program = parser.parse_program();
+        let statements = program.statements();
+
+        assert_eq!(expected_statements.len(), statements.len());
+        for ((expected_statement, expected_name), actual) in expected_statements.iter().zip(&expected_names).zip(statements) {
+            assert_eq!(expected_statement, actual);
+            let name = parser.lexer.lookup_literal(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Identifier was not registered by lexer");
+            assert_eq!(name, expected_name);
+        }
     }
 
     #[test]

@@ -11,7 +11,7 @@ pub enum Token {
     //  Operators
     Assign,
     Plus,
-    Dash,
+    Minus,
     Asterisk,
     Slash,
     Bang,
@@ -60,7 +60,7 @@ impl std::fmt::Display for Token {
             //  Operators
             Token::Assign => write!(f, "Assign"),
             Token::Plus => write!(f, "Plus"),
-            Token::Dash => write!(f, "Dash"),
+            Token::Minus => write!(f, "Dash"),
             Token::Asterisk => write!(f, "Asterisk"),
             Token::Slash => write!(f, "Slash"),
             Token::Bang => write!(f, "Bang"),

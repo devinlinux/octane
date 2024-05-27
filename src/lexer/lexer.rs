@@ -59,7 +59,7 @@ impl Lexer {
                 }
             },
             b'+' => Token::Plus,
-            b'-' => Token::Dash,
+            b'-' => Token::Minus,
             b'*' => Token::Asterisk,
             b'/' => Token::Slash,
             b'!' => {
@@ -197,7 +197,7 @@ mod tests {
             Token::Assign,
             Token::Illegal(b'~'),
             Token::Bang,
-            Token::Dash,
+            Token::Minus,
             Token::Plus,
             Token::LT,
             Token::GT,
