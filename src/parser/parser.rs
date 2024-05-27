@@ -250,6 +250,7 @@ mod tests {
             7;
             3.14;
             42;
+            1_000_000;
             "#;
             let lexer = Lexer::new(input.into());
             let mut parser = Parser::new(lexer);
@@ -258,6 +259,7 @@ mod tests {
                 Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(7))),
                 Statement::Expression(Expression::FloatLiteral(FloatLiteral::new(3.14))),
                 Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(42))),
+                Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(1000000))),
             ];
 
             let program = parser.parse_program();
