@@ -58,7 +58,7 @@ impl Default for LetStatement {
     fn default() -> LetStatement {
         Self {
             name: Identifier::new(u32::MAX),
-            value: Expression::Temp,
+            value: Expression::Identifier(Identifier::new(u32::MAX)),
         }
     }
 }
@@ -93,16 +93,30 @@ trait Parsable {
     fn parse(parser: &mut Parser) -> Result<impl Parsable, String>;
 }
 
+pub enum Precedence {
+    Lowest = 0,
+    Equality = 1,
+    Comparison = 2,
+    Sum = 3,
+    Product = 4,
+    Prefix = 5,
+    Call = 6,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     Temp,
     Identifier(Identifier),
+    IntegerLiteral(IntegerLiteral),
+    FloatLiteral(FloatLiteral),
 }
 
 impl Expression {
     pub fn parse(parser: &mut Parser, precedence: Precedence) -> Result<Expression, String> {
         match parser.curr_token() {
             Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
+            Token::Int(_) => IntegerLiteral::parse(parser).map(Expression::IntegerLiteral),
+            Token::Float(_) => FloatLiteral::parse(parser).map(Expression::FloatLiteral),
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
         }
     }
@@ -126,12 +140,38 @@ impl Parsable for Identifier {
     }
 }
 
-pub enum Precedence {
-    Lowest = 0,
-    Equality = 1,
-    Comparison = 2,
-    Sum = 3,
-    Product = 4,
-    Prefix = 5,
-    Call = 6,
+#[derive(Debug, PartialEq)]
+pub struct IntegerLiteral(i64);
+
+impl IntegerLiteral {
+    pub fn new(value: i64) -> IntegerLiteral {
+        Self(value)
+    }
+}
+
+impl Parsable for IntegerLiteral {
+    fn parse(parser: &mut Parser) -> Result<IntegerLiteral, String> {
+        match parser.curr_token() {
+            Token::Int(value) => Ok(IntegerLiteral(*value)),
+            _ => unreachable!("Should only attempt to parse IntegerLiteral on Int token"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct FloatLiteral(f64);
+
+impl FloatLiteral {
+    pub fn new(value: f64) -> FloatLiteral {
+        Self(value)
+    }
+}
+
+impl Parsable for FloatLiteral {
+    fn parse(parser: &mut Parser) -> Result<FloatLiteral, String> {
+        match parser.curr_token() {
+            Token::Float(value) => Ok(FloatLiteral(*value)),
+            _ => unreachable!("Should only attempt to parse FloatLiteral on Float token"),
+        }
+    }
 }

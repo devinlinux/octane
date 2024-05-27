@@ -1,5 +1,15 @@
 use crate::lexer::{ Lexer, Token };
-use crate::parser::ast::{ Program, Statement, LetStatement, ReturnStatement, Expression, Identifier, Precedence };
+use crate::parser::ast::{
+    Program,
+    Statement,
+    LetStatement,
+    ReturnStatement,
+    Expression,
+    Identifier,
+    IntegerLiteral,
+    FloatLiteral,
+    Precedence
+};
 
 pub struct Parser {
     lexer: Lexer,
@@ -219,6 +229,31 @@ mod tests {
                 Statement::Expression(Expression::Identifier(Identifier::new(0))),
                 Statement::Expression(Expression::Identifier(Identifier::new(1))),
                 Statement::Expression(Expression::Identifier(Identifier::new(2))),
+            ];
+
+            let program = parser.parse_program();
+            let statements = program.statements();
+
+            assert_eq!(expected_statements.len(), statements.len());
+            for (expected, actual) in expected_statements.iter().zip(statements) {
+                assert_eq!(expected, actual);
+            }
+    }
+
+    #[test]
+    fn test_parse_numbers() {
+        let input = r#"
+            7;
+            3.14;
+            42;
+            "#;
+            let lexer = Lexer::new(input.into());
+            let mut parser = Parser::new(lexer);
+
+            let expected_statements = vec![
+                Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(7))),
+                Statement::Expression(Expression::FloatLiteral(FloatLiteral::new(3.14))),
+                Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(42))),
             ];
 
             let program = parser.parse_program();
