@@ -58,6 +58,10 @@ impl Parser {
         self.errors.push(msg);
     }
 
+    pub(super) fn lookup_literal(&self, key: usize) -> Option<&String> {
+        self.lexer.lookup_literal(key)
+    }
+
     pub fn curr_token(&self) -> &Token {
         &self.curr_token
     }
@@ -74,7 +78,7 @@ impl Parser {
     }
 
     fn parse_let_statement(&mut self) -> Option<LetStatement> {
-        if !self.assert_peek(&Token::Ident(u32::MAX)) {
+        if !self.assert_peek(&Token::Ident(0)) {
             return None
         }
 
@@ -169,8 +173,8 @@ mod tests {
 
         let expected_statements = vec![
             Statement::Let(LetStatement::new(0, Expression::Temp)),
-            Statement::Let(LetStatement::new(1, Expression::Temp)),
             Statement::Let(LetStatement::new(2, Expression::Temp)),
+            Statement::Let(LetStatement::new(4, Expression::Temp)),
         ];
 
         let expected_names = vec![
@@ -185,7 +189,7 @@ mod tests {
         assert_eq!(expected_statements.len(), statements.len());
         for ((expected_statement, expected_name), actual) in expected_statements.iter().zip(&expected_names).zip(statements) {
             assert_eq!(expected_statement, actual);
-            let name = parser.lexer.lookup_ident(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Did not find identifier from index");
+            let name = parser.lexer.lookup_literal(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Did not find identifier from index");
             assert_eq!(name, expected_name);
         }
     }

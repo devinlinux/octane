@@ -57,21 +57,21 @@ pub struct LetStatement {
 impl Default for LetStatement {
     fn default() -> LetStatement {
         Self {
-            name: Identifier::new(u32::MAX),
-            value: Expression::Identifier(Identifier::new(u32::MAX)),
+            name: Identifier::new(0),
+            value: Expression::Identifier(Identifier::new(0)),
         }
     }
 }
 
 impl LetStatement {
-    pub fn new(name: u32, value: Expression) -> LetStatement {
+    pub fn new(name: usize, value: Expression) -> LetStatement {
         Self {
             name: Identifier::new(name),
             value,
         }
     }
 
-    pub fn name(&self) -> u32 {
+    pub fn name(&self) -> usize {
         self.name.0
     }
 }
@@ -123,10 +123,10 @@ impl Expression {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Identifier(u32);
+pub struct Identifier(usize);
 
 impl Identifier {
-    pub fn new(value: u32) -> Identifier {
+    pub fn new(value: usize) -> Identifier {
         Self(value)
     }
 }
@@ -152,8 +152,14 @@ impl IntegerLiteral {
 impl Parsable for IntegerLiteral {
     fn parse(parser: &mut Parser) -> Result<IntegerLiteral, String> {
         match parser.curr_token() {
-            Token::Int(value) => Ok(IntegerLiteral(*value)),
-            _ => unreachable!("Should only attempt to parse IntegerLiteral on Int token"),
+            Token::Int(key) => {
+                let number = parser.lookup_literal(*key).expect("Integer was not registered by lexer");
+                match number.parse::<i64>() {
+                    Ok(int) => Ok(Self(int)),
+                    Err(err) => Err(format!("Could not parse {} as integer literal: {}", number, err)),
+                }
+            },
+            _ => unreachable!("Should only attempt to parse IntegerLiteral on Integer token"),
         }
     }
 }
@@ -170,7 +176,13 @@ impl FloatLiteral {
 impl Parsable for FloatLiteral {
     fn parse(parser: &mut Parser) -> Result<FloatLiteral, String> {
         match parser.curr_token() {
-            Token::Float(value) => Ok(FloatLiteral(*value)),
+            Token::Float(key) => {
+                let number = parser.lookup_literal(*key).expect("Float was not registered by lexer");
+                match number.parse::<f64>() {
+                    Ok(float) => Ok(Self(float)),
+                    Err(err) => Err(format!("Could not parse {} as float literal: {}", number, err)),
+                }
+            },
             _ => unreachable!("Should only attempt to parse FloatLiteral on Float token"),
         }
     }

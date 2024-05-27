@@ -4,9 +4,9 @@ pub enum Token {
     Eof,
 
     //  identifiers + literals
-    Ident(u32),
-    Int(i64),
-    Float(f64),
+    Ident(usize),
+    Int(usize),
+    Float(usize),
 
     //  Operators
     Assign,

@@ -8,8 +8,8 @@ pub struct Lexer {
     read_pos: usize,
     ch: u8,
 
-    ident_table: HashMap<u32, String>,
-    ident_idx: u32,
+    literal_table: HashMap<usize, String>,
+    ident_idx: usize,
 }
 
 impl Lexer {
@@ -20,7 +20,7 @@ impl Lexer {
             read_pos: 0,
             ch: 0,
 
-            ident_table: HashMap::default(),
+            literal_table: HashMap::default(),
             ident_idx: 0,
         };
         lexer.read_char();
@@ -93,18 +93,22 @@ impl Lexer {
                     "else" => Token::Else,
                     "return" => Token::Return,
                     _ => {
-                        self.register_ident(ident);
+                        self.register_literal(ident);
                         Token::Ident(self.ident_idx - 1)
                     },
                 }
             },
             b'0'..=b'9' => {
-                let mut num = self.read_num();
+                let mut num = self.read_number();
                 num = num.replace("_", "");
-                if num.contains(".") {
-                    return Token::Float(num.parse::<f64>().unwrap())
+                let is_float = num.contains(".");
+
+                self.register_literal(num);
+
+                if is_float {
+                    return Token::Float(self.ident_idx - 1)
                 }
-                return Token::Int(num.parse::<i64>().unwrap())
+                return Token::Int(self.ident_idx - 1)
             }
 
             _ => Token::Illegal(self.ch),
@@ -126,7 +130,7 @@ impl Lexer {
         self.read_loop(is_valid_var_char)
     }
 
-    fn read_num(&mut self) -> String {
+    fn read_number(&mut self) -> String {
         self.read_loop(is_valid_num_char)
     }
 
@@ -141,13 +145,13 @@ impl Lexer {
         String::from_utf8_lossy(&self.input[start..self.pos]).to_string()
     }
 
-    fn register_ident(&mut self, ident: String) {
-        self.ident_table.insert(self.ident_idx, ident);
+    fn register_literal(&mut self, ident: String) {
+        self.literal_table.insert(self.ident_idx, ident);
         self.ident_idx += 1;
     }
 
-    pub fn lookup_ident(&self, key: u32) -> Option<&String> {
-        self.ident_table.get(&key)
+    pub fn lookup_literal(&self, key: usize) -> Option<&String> {
+        self.literal_table.get(&key)
     }
 }
 
@@ -178,12 +182,12 @@ mod tests {
             Token::Let,
             Token::Ident(0),
             Token::Assign,
-            Token::Int(5000000),
+            Token::Int(1),
             Token::Semicolon,
             Token::Let,
-            Token::Ident(1),
+            Token::Ident(2),
             Token::Assign,
-            Token::Float(3.14),
+            Token::Float(3),
             Token::Semicolon,
             Token::If,
             Token::Else,
