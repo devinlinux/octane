@@ -47,7 +47,7 @@ impl Parser {
         match self.curr_token {
             Token::Let => self.parse_let_statement().map(Statement::Let),
             Token::Return => self.parse_return_statement().map(Statement::Return),
-            _ => None,
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -80,6 +80,17 @@ impl Parser {
         }
 
         Some(ReturnStatement::new(Expression::Temp))
+    }
+}
+
+//  Expression parsing
+impl Parser {
+    fn parse_expression_statement(&mut self) -> Option<Expression> {
+
+    }
+
+    fn parse_expression(&mut self) {
+
     }
 }
 

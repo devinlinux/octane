@@ -26,6 +26,7 @@ impl Program {
 pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
+    Expression(Expression),
 }
 
 impl Statement {
@@ -108,11 +109,11 @@ impl ReturnStatement {
 }
 
 pub enum Precedence {
-    Lowest,
-    Equality,
-    Comparison,
-    Sum,
-    Product,
-    Prefix,
-    Call,
+    Lowest = 0,
+    Equality = 1,
+    Comparison = 2,
+    Sum = 3,
+    Product = 4,
+    Prefix = 5,
+    Call = 6,
 }
