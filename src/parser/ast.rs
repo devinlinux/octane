@@ -48,43 +48,6 @@ impl Statement {
     }
 }
 
-trait Parsable {
-    fn parse(parser: &mut Parser) -> Result<impl Parsable, String>;
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Expression {
-    Temp,
-    Identifier(Identifier),
-}
-
-impl Expression {
-    pub fn parse(parser: &mut Parser, precedence: Precedence) -> Result<Expression, String> {
-        match parser.curr_token() {
-            Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
-            _ => Err(format!("No parser available for token {}", parser.curr_token())),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Identifier(u32);
-
-impl Identifier {
-    pub fn new(value: u32) -> Identifier {
-        Self(value)
-    }
-}
-
-impl Parsable for Identifier {
-    fn parse(parser: &mut Parser) -> Result<Identifier, String> {
-        match parser.curr_token() {
-            Token::Ident(id) => Ok(Identifier::new(*id)),
-            _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct LetStatement {
     name: Identifier,
@@ -122,6 +85,43 @@ impl ReturnStatement {
     pub fn new(value: Expression) -> ReturnStatement {
         Self {
             value
+        }
+    }
+}
+
+trait Parsable {
+    fn parse(parser: &mut Parser) -> Result<impl Parsable, String>;
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Expression {
+    Temp,
+    Identifier(Identifier),
+}
+
+impl Expression {
+    pub fn parse(parser: &mut Parser, precedence: Precedence) -> Result<Expression, String> {
+        match parser.curr_token() {
+            Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
+            _ => Err(format!("No parser available for token {}", parser.curr_token())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Identifier(u32);
+
+impl Identifier {
+    pub fn new(value: u32) -> Identifier {
+        Self(value)
+    }
+}
+
+impl Parsable for Identifier {
+    fn parse(parser: &mut Parser) -> Result<Identifier, String> {
+        match parser.curr_token() {
+            Token::Ident(id) => Ok(Identifier::new(*id)),
+            _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
         }
     }
 }
