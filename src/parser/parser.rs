@@ -183,15 +183,7 @@ mod tests {
             "z",
         ];
 
-        let program = parser.parse_program();
-        let statements = program.statements();
-
-        assert_eq!(expected_statements.len(), statements.len());
-        for ((expected_statement, expected_name), actual) in expected_statements.iter().zip(&expected_names).zip(statements) {
-            assert_eq!(expected_statement, actual);
-            let name = parser.lexer.lookup_literal(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Did not find identifier from index");
-            assert_eq!(name, expected_name);
-        }
+        statement_assert_loop(parser.parse_program(), expected_statements);
     }
 
     #[test]
@@ -210,13 +202,7 @@ mod tests {
             Statement::Return(ReturnStatement::new(Expression::Temp)),
         ];
 
-        let program = parser.parse_program();
-        let statements = program.statements();
-
-        assert_eq!(expected_statements.len(), statements.len());
-        for (expected, actual) in expected_statements.iter().zip(statements) {
-            assert_eq!(expected, actual);
-        }
+        statement_assert_loop(parser.parse_program(), expected_statements);
     }
 
     #[test]
@@ -235,13 +221,7 @@ mod tests {
                 Statement::Expression(Expression::Identifier(Identifier::new(2))),
             ];
 
-            let program = parser.parse_program();
-            let statements = program.statements();
-
-            assert_eq!(expected_statements.len(), statements.len());
-            for (expected, actual) in expected_statements.iter().zip(statements) {
-                assert_eq!(expected, actual);
-            }
+            statement_assert_loop(parser.parse_program(), expected_statements);
     }
 
     #[test]
@@ -262,7 +242,10 @@ mod tests {
                 Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(1000000))),
             ];
 
-            let program = parser.parse_program();
+            statement_assert_loop(parser.parse_program(), expected_statements)
+    }
+
+    fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
             let statements = program.statements();
 
             assert_eq!(expected_statements.len(), statements.len());
