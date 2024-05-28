@@ -73,6 +73,10 @@ impl Parser {
     pub fn peek_token(&self) -> Token {
         self.peek_token
     }
+
+    pub fn errors(&self) -> &Vec<String> {
+        &self.errors
+    }
 }
 
 //  Statement parsing
