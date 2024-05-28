@@ -217,7 +217,6 @@ mod tests {
 
         for token in tokens {
             let next = lexer.next();
-            //println!("expected: {token}, got: {next}");
             assert_eq!(token, next);
         }
     }
