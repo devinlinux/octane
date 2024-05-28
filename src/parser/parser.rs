@@ -48,9 +48,8 @@ impl Parser {
         let mut program = Program::default();
 
         while self.curr_token != Token::Eof {
-            match self.parse_statement() {
-                Some(statement) => program.add_statement(statement),
-                None => continue,
+            if let Some(statement) = self.parse_statement() {
+                program.add_statement(statement);
             }
             self.next();
         }
