@@ -1,6 +1,7 @@
 mod util;
 mod lexer;
 mod parser;
+mod object;
 
 use std::env;
 
