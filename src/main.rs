@@ -32,7 +32,8 @@ fn _main<'a>() -> Result<(), &'a str> {
                 Ok(())
             },
             _ => {
-                lexer::tokenize_file(&args[1]).iter().for_each(|token| println!("{token}"));
+                //lexer::tokenize_file(&args[1]).iter().for_each(|token| println!("{token}"));
+                parser::parse_file(&args[1]).statements().iter().for_each(|statement| println!("{statement}"));
                 Ok(())
             }
         }

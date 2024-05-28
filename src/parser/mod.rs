@@ -33,9 +33,26 @@ pub fn parsing_repl() {
         }
 
         for statement in program.statements() {
-            println!("{statement}");
+               println!("{statement}");
         }
     }
+}
+
+pub fn parse_file(path: &str) -> ast::Program {
+    let contents = crate::util::file_to_string(path);
+    parse_string(contents)
+}
+
+fn parse_string(str: String) -> ast::Program {
+    let lexer = crate::lexer::Lexer::new(str);
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    if parser.errors().len() != 0 {
+        print_parser_errors(parser.errors());
+    }
+
+    program
 }
 
 pub fn print_parser_errors(errors: &Vec<String>) {
