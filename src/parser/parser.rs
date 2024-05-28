@@ -8,6 +8,7 @@ use crate::parser::ast::{
     Identifier,
     IntegerLiteral,
     FloatLiteral,
+    BooleanLiteral,
     PrefixOperator,
     Precedence
 };
@@ -135,7 +136,7 @@ impl Parser {
 
 //  helper methods
 impl Parser {
-    fn curr_token_is(&self, token: &Token) -> bool {
+    pub(super) fn curr_token_is(&self, token: &Token) -> bool {
         match self.curr_token {
             Token::Ident(_) => matches!(token, Token::Ident(_)),
             Token::Int(_) => matches!(token, Token::Int(_)),
@@ -266,6 +267,21 @@ mod tests {
             ];
 
             statement_assert_loop(parser.parse_program(), expected_statements)
+    }
+
+    #[test]
+    fn test_parse_boolean() {
+        let input = r#"
+            true;
+            false;
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+
+        let expected_statements = vec![
+            Statement::Expression(Expression::BooleanLiteral(BooleanLiteral::new(true))),
+            Statement::Expression(Expression::BooleanLiteral(BooleanLiteral::new(false))),
+        ];
     }
 
     #[test]

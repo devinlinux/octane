@@ -120,6 +120,7 @@ pub enum Expression {
     Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
     FloatLiteral(FloatLiteral),
+    BooleanLiteral(BooleanLiteral),
     PrefixOperator(PrefixOperator),
     InfixOperator(InfixOperator),
 }
@@ -130,6 +131,7 @@ impl Expression {
             Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
             Token::Int(_) => IntegerLiteral::parse(parser).map(Expression::IntegerLiteral),
             Token::Float(_) => FloatLiteral::parse(parser).map(Expression::FloatLiteral),
+            Token::True | Token::False => BooleanLiteral::parse(parser).map(Expression::BooleanLiteral),
             Token::Bang | Token::Minus => PrefixOperator::parse(parser).map(Expression::PrefixOperator),
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
         }?;
@@ -289,5 +291,23 @@ impl Parsable for InfixOperator {
         let rhs = Expression::parse(parser, precedence)?;
 
         Ok(InfixOperator::new(operator, lhs, rhs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BooleanLiteral(bool);
+
+#[cfg(test)]
+impl BooleanLiteral {
+    pub fn new(value: bool) -> BooleanLiteral {
+        Self(value)
+    }
+}
+
+impl Parsable for BooleanLiteral {
+    type Output = BooleanLiteral;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        Ok(Self(parser.curr_token_is(&Token::True)))
     }
 }
