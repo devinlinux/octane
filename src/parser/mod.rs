@@ -33,7 +33,7 @@ pub fn parsing_repl() {
         }
 
         for statement in program.statements() {
-            println!("{statement:?}");
+            println!("{statement}");
         }
     }
 }

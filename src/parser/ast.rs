@@ -40,6 +40,16 @@ impl Statement {
     }
 }
 
+impl std::fmt::Display for Statement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Let(stmt) => write!(f, "{stmt}"),
+            Self::Return(stmt) => write!(f, "{stmt}"),
+            Self::Expression(exp) => write!(f, "{exp}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct LetStatement {
     name: Identifier,
@@ -68,6 +78,12 @@ impl LetStatement {
     }
 }
 
+impl std::fmt::Display for LetStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "let {{ id: {} value: {} }}", self.name, self.value)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
     value: Expression,
@@ -78,6 +94,12 @@ impl ReturnStatement {
         Self {
             value
         }
+    }
+}
+
+impl std::fmt::Display for ReturnStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "return {{ value: {} }}", self.value)
     }
 }
 
@@ -117,7 +139,6 @@ impl From<&Token> for Precedence {
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
-    Temp,
     Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
     FloatLiteral(FloatLiteral),
@@ -179,6 +200,22 @@ impl Expression {
     }
 }
 
+impl std::fmt::Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Identifier(identifier) => write!(f, "{identifier}"),
+            Self::IntegerLiteral(int) => write!(f, "{int}"),
+            Self::FloatLiteral(float) => write!(f, "{float}"),
+            Self::BooleanLiteral(boolean) => write!(f, "{boolean}"),
+            Self::FunctionLiteral(func) => write!(f, "{func}"),
+            Self::PrefixOperator(prefix) => write!(f, "{prefix}"),
+            Self::InfixOperator(infix) => write!(f, "{infix}"),
+            Self::ConditionalExpression(conditional) => write!(f, "{conditional}"),
+            Self::CallExpression(call) => write!(f, "{call}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Identifier(usize);
 
@@ -196,6 +233,12 @@ impl Parsable for Identifier {
             Token::Ident(id) => Ok(Self(*id)),
             _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
         }
+    }
+}
+
+impl std::fmt::Display for Identifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Identifier {{ id: {} }}", self.0)
     }
 }
 
@@ -226,6 +269,12 @@ impl Parsable for IntegerLiteral {
     }
 }
 
+impl std::fmt::Display for IntegerLiteral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "IntegerLiteral {{ {} }}", self.0)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct FloatLiteral(f64);
 
@@ -253,6 +302,12 @@ impl Parsable for FloatLiteral {
     }
 }
 
+impl std::fmt::Display for FloatLiteral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FloatLiteral {{ {} }}", self.0)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct BooleanLiteral(bool);
 
@@ -268,6 +323,12 @@ impl Parsable for BooleanLiteral {
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
         Ok(Self(parser.curr_token_is(&Token::True)))
+    }
+}
+
+impl std::fmt::Display for BooleanLiteral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BooleanLiteral {{ {} }}", self.0)
     }
 }
 
@@ -296,6 +357,12 @@ impl Parsable for PrefixOperator {
         let rhs = Expression::parse(parser, Precedence::Prefix)?;
 
         Ok(PrefixOperator::new(operator, rhs))
+    }
+}
+
+impl std::fmt::Display for PrefixOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Prefix {{ op: {} rhs: {} }}", self.operator, self.rhs)
     }
 }
 
@@ -331,6 +398,12 @@ impl Parsable for InfixOperator {
         let rhs = Expression::parse(parser, precedence)?;
 
         Ok(InfixOperator::new(operator, lhs, rhs))
+    }
+}
+
+impl std::fmt::Display for InfixOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Infix: {{ op: {}\n\tlhs: {}\n\t: rhs: {}\n}}", self.operator, self.lhs, self.rhs)
     }
 }
 
@@ -392,6 +465,12 @@ impl Parsable for ConditionalExpression {
         }
 
         Ok(ConditionalExpression::new(condition, consequence, alternative))
+    }
+}
+
+impl std::fmt::Display for ConditionalExpression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Conditional: {{\n\tcondition: {}\n\tconsequence: {}\n\talternative: {:?}\n}}", self.condition, self.consequence, self.alternative)
     }
 }
 
@@ -461,6 +540,12 @@ impl Parsable for FunctionLiteral {
     }
 }
 
+impl std::fmt::Display for FunctionLiteral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Fn: {{\n\tparams: {:?}\n\tbody: {}\n}}", self.parameters, self.body)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct BlockStatement(Vec<Statement>);
 
@@ -487,6 +572,19 @@ impl Parsable for BlockStatement {
         }
 
         Ok(Self::new(statements))
+    }
+}
+
+impl std::fmt::Display for BlockStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut str = String::from("{\n\t\t");
+        for statement in &self.0 {
+            str.push_str(&format!("{}\n\t\t", statement));
+        }
+        str.remove(str.len() - 1);
+        str.push_str("}");
+
+        write!(f, "{str}")
     }
 }
 
@@ -538,5 +636,11 @@ impl Parsable for CallExpression {
 
     fn parse_with_lhs(parser: &mut Parser, func: Expression) -> Result<Self::Output, String> {
         Ok(CallExpression::new(func, CallExpression::parse_call_args(parser)?))
+    }
+}
+
+impl std::fmt::Display for CallExpression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FnCall {{\n\tfunc: {}\n\targs: {:?}", self.function, self.args)
     }
 }
