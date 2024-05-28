@@ -312,6 +312,7 @@ impl Evaluate for Expression {
         match self {
             Self::IntegerLiteral(int) => int.eval(),
             Self::FloatLiteral(float) => float.eval(),
+            Self::BooleanLiteral(boolean) => boolean.eval(),
             _ => None,
         }
     }
@@ -436,6 +437,12 @@ impl ParseExpression for BooleanLiteral {
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
         Ok(Self(parser.curr_token_is(&Token::True)))
+    }
+}
+
+impl Evaluate for BooleanLiteral {
+    fn eval(&self) -> Option<Object> {
+        Some(Object::Boolean(self.0))
     }
 }
 
