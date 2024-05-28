@@ -17,14 +17,18 @@ fn _main<'a>() -> Result<(), &'a str> {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
-        1 => Err("Usage octane <file path> | octane --repl | octane -rppl"),
+        1 => Err("Usage octane <file path> | octane --rlpl | octane -rppl | octane --repl"),
         _ => match args[1].as_str() {
-            "--repl" => {
+            "--rlpl" => {
                 lexer::tokenization_repl();
                 Ok(())
             },
             "--rppl" => {
                 parser::parsing_repl();
+                Ok(())
+            },
+            "--repl" => {
+                interpreter::eval_repl();
                 Ok(())
             },
             _ => {

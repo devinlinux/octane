@@ -38,7 +38,7 @@ pub fn parsing_repl() {
     }
 }
 
-fn print_parser_errors(errors: &Vec<String>) {
+pub fn print_parser_errors(errors: &Vec<String>) {
     println!("Parser parsed with errors:");
     for err in errors {
         println!("\t{err}");
