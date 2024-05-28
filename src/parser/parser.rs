@@ -2,6 +2,7 @@ use crate::lexer::{ Lexer, Token };
 use crate::parser::ast::{
     Program,
     Statement,
+    ParseStatement,
     LetStatement,
     ReturnStatement,
     Expression,
@@ -82,63 +83,10 @@ impl Parser {
 impl Parser {
     pub(super) fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token {
-            Token::Let => self.parse_let_statement().map(Statement::Let),
-            Token::Return => self.parse_return_statement().map(Statement::Return),
+            Token::Let => LetStatement::parse(self).map(Statement::Let),
+            Token::Return => ReturnStatement::parse(self).map(Statement::Return),
             _ => self.parse_expression_statement().map(Statement::Expression),
         }
-    }
-
-    fn parse_let_statement(&mut self) -> Option<LetStatement> {
-        if !self.assert_peek(&Token::Ident(0)) {
-            return None
-        }
-
-        let name = match self.curr_token {
-            Token::Ident(name) => name,
-            _ => unreachable!("Identity as Ident should have already been confirmed"),
-        };
-
-        if !self.assert_peek(&Token::Assign) {
-            return None
-        }
-        self.next();
-
-        let value = match Expression::parse(self, Precedence::Lowest) {
-            Ok(value) => value,
-            Err(err) => {
-                self.push_error(err);
-                return None;
-            },
-        };
-
-        if !self.peek_token_is(&Token::Semicolon) {
-            self.push_error(format!("Expected semicolon, got {}", self.peek_token));
-            return None;
-        }
-        self.next();
-
-        Some(LetStatement::new(name, value))
-    }
-
-    fn parse_return_statement(&mut self) -> Option<ReturnStatement> {
-        self.next();
-
-        let value = match Expression::parse(self, Precedence::Lowest) {
-            Ok(value) => value,
-            Err(err) => {
-                println!("{}", err);
-                self.push_error(err);
-                return None;
-            },
-        };
-
-        if !self.peek_token_is(&Token::Semicolon) {
-            self.push_error(format!("Expected semicolon, got {}", self.peek_token));
-            return None;
-        }
-        self.next();
-
-        Some(ReturnStatement::new(value))
     }
 }
 

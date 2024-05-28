@@ -23,6 +23,12 @@ impl Program {
     }
 }
 
+pub trait ParseStatement {
+    type Output;
+
+    fn parse(parser: &mut Parser) -> Option<Self::Output>;
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(LetStatement),
@@ -84,6 +90,42 @@ impl std::fmt::Display for LetStatement {
     }
 }
 
+impl ParseStatement for LetStatement {
+    type Output = Self;
+
+    fn parse(parser: &mut Parser) -> Option<Self::Output> {
+        if !parser.assert_peek(&Token::Ident(0)) {
+            return None;
+        }
+
+        let name = match parser.curr_token() {
+            Token::Ident(name) => *name,
+            _ => unreachable!("Identity as Ident should have already been confirmed"),
+        };
+
+        if !parser.assert_peek(&Token::Assign) {
+            return None;
+        }
+        parser.next();
+
+        let value = match Expression::parse(parser, Precedence::Lowest) {
+            Ok(value) => value,
+            Err(err) => {
+                parser.push_error(err);
+                return None;
+            },
+        };
+
+        if !parser.peek_token_is(&Token::Semicolon) {
+            parser.push_error(format!("Expected semicolon, got {}", parser.peek_token()));
+            return None;
+        }
+        parser.next();
+
+        Some(Self::new(name, value))
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
     value: Expression,
@@ -103,8 +145,32 @@ impl std::fmt::Display for ReturnStatement {
     }
 }
 
-trait Parsable {
-    type Output: Parsable;
+impl ParseStatement for ReturnStatement {
+    type Output = Self;
+
+    fn parse(parser: &mut Parser) -> Option<Self::Output> {
+        parser.next();
+
+        let value = match Expression::parse(parser, Precedence::Lowest) {
+            Ok(value) => value,
+            Err(err) => {
+                parser.push_error(err);
+                return None;
+            }
+        };
+
+        if !parser.peek_token_is(&Token::Semicolon) {
+            parser.push_error(format!("Expected semicolon, got {}", parser.peek_token()));
+            return None;
+        }
+        parser.next();
+
+        Some(Self::new(value))
+    }
+}
+
+trait ParseExpression {
+    type Output: ParseExpression;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String>;
 
@@ -225,7 +291,7 @@ impl Identifier {
     }
 }
 
-impl Parsable for Identifier {
+impl ParseExpression for Identifier {
     type Output = Identifier;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -252,7 +318,7 @@ impl IntegerLiteral {
     }
 }
 
-impl Parsable for IntegerLiteral {
+impl ParseExpression for IntegerLiteral {
     type Output = IntegerLiteral;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -285,7 +351,7 @@ impl FloatLiteral {
     }
 }
 
-impl Parsable for FloatLiteral {
+impl ParseExpression for FloatLiteral {
     type Output = FloatLiteral;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -318,7 +384,7 @@ impl BooleanLiteral {
     }
 }
 
-impl Parsable for BooleanLiteral {
+impl ParseExpression for BooleanLiteral {
     type Output = BooleanLiteral;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -347,7 +413,7 @@ impl PrefixOperator {
     }
 }
 
-impl Parsable for PrefixOperator {
+impl ParseExpression for PrefixOperator {
     type Output = PrefixOperator;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -383,7 +449,7 @@ impl InfixOperator {
     }
 }
 
-impl Parsable for InfixOperator {
+impl ParseExpression for InfixOperator {
     type Output = InfixOperator;
 
     fn parse(_parser: &mut Parser) -> Result<Self::Output, String> {
@@ -424,7 +490,7 @@ impl ConditionalExpression {
     }
 }
 
-impl Parsable for ConditionalExpression {
+impl ParseExpression for ConditionalExpression {
     type Output = ConditionalExpression;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -521,7 +587,7 @@ impl FunctionLiteral {
     }
 }
 
-impl Parsable for FunctionLiteral {
+impl ParseExpression for FunctionLiteral {
     type Output = FunctionLiteral;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -555,7 +621,7 @@ impl BlockStatement {
     }
 }
 
-impl Parsable for BlockStatement {
+impl ParseExpression for BlockStatement {
     type Output = BlockStatement;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
@@ -627,7 +693,7 @@ impl CallExpression {
     }
 }
 
-impl Parsable for CallExpression {
+impl ParseExpression for CallExpression {
     type Output = CallExpression;
 
     fn parse(_parser: &mut Parser) -> Result<Self::Output, String> {
