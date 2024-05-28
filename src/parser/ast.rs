@@ -137,6 +137,7 @@ impl Expression {
             Token::Bang | Token::Minus => PrefixOperator::parse(parser).map(Expression::PrefixOperator),
             Token::LParen => Expression::parse_grouped_expression(parser),
             Token::If => ConditionalExpression::parse(parser).map(Expression::ConditionalExpression),
+            Token::Function => FunctionLiteral::parse(parser).map(Expression::FunctionLiteral),
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
         }?;
 
@@ -400,6 +401,57 @@ impl FunctionLiteral {
             parameters,
             body,
         }
+    }
+
+    fn parse_function_params(parser: &mut Parser) -> Result<Vec<Identifier>, String> {
+        let mut identifiers = Vec::new();
+
+        if parser.peek_token_is(&Token::RParen) {
+            parser.next();
+            return Ok(identifiers);
+        }
+
+        parser.next();
+        let mut ident = match parser.curr_token() {
+            Token::Ident(id) => Identifier::new(*id),
+            _ => return Err(format!("Expected identifier, got {}", parser.curr_token())),
+        };
+        identifiers.push(ident);
+
+        while parser.peek_token_is(&Token::Comma) {
+            parser.next();
+            parser.next();
+            ident = match parser.curr_token() {
+                Token::Ident(id) => Identifier::new(*id),
+                _ => return Err(format!("Expected identifier, got {}", parser.curr_token())),
+            };
+            identifiers.push(ident);
+        }
+
+        if !parser.assert_peek(&Token::RParen) {
+            return Err(format!("Expected RParen, got {}", parser.peek_token()));
+        }
+
+        Ok(identifiers)
+    }
+}
+
+impl Parsable for FunctionLiteral {
+    type Output = FunctionLiteral;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        if !parser.assert_peek(&Token::LParen) {
+            return Err(format!("Expected LParen, got {}", parser.peek_token()));
+        }
+
+        let params = FunctionLiteral::parse_function_params(parser)?;
+        if !parser.assert_peek(&Token::LSquirly) {
+            return Err(format!("Expected LSquirly, got {}", parser.peek_token()));
+        }
+
+        let body = BlockStatement::parse(parser)?;
+
+        Ok(FunctionLiteral::new(params, body))
     }
 }
 

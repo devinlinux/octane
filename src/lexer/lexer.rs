@@ -9,7 +9,7 @@ pub struct Lexer {
     ch: u8,
 
     literal_table: HashMap<usize, String>,
-    ident_idx: usize,
+    literal_idx: usize,
 }
 
 impl Lexer {
@@ -21,7 +21,7 @@ impl Lexer {
             ch: 0,
 
             literal_table: HashMap::default(),
-            ident_idx: 0,
+            literal_idx: 0,
         };
         lexer.read_char();
 
@@ -96,7 +96,7 @@ impl Lexer {
                     "false" => return Token::False,
                     _ => {
                         self.register_literal(ident);
-                        return Token::Ident(self.ident_idx - 1)
+                        return Token::Ident(self.literal_idx - 1)
                     },
                 }
             },
@@ -108,9 +108,9 @@ impl Lexer {
                 self.register_literal(num);
 
                 if is_float {
-                    return Token::Float(self.ident_idx - 1)
+                    return Token::Float(self.literal_idx - 1)
                 }
-                return Token::Int(self.ident_idx - 1)
+                return Token::Int(self.literal_idx - 1)
             }
 
             _ => Token::Illegal(self.ch),
@@ -148,8 +148,8 @@ impl Lexer {
     }
 
     fn register_literal(&mut self, literal: String) {
-        self.literal_table.insert(self.ident_idx, literal);
-        self.ident_idx += 1;
+        self.literal_table.insert(self.literal_idx, literal);
+        self.literal_idx += 1;
     }
 
     pub fn lookup_literal(&self, key: usize) -> Option<&String> {

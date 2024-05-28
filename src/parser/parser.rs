@@ -9,6 +9,7 @@ use crate::parser::ast::{
     IntegerLiteral,
     FloatLiteral,
     BooleanLiteral,
+    FunctionLiteral,
     PrefixOperator,
     BlockStatement,
     Precedence,
@@ -356,40 +357,66 @@ mod tests {
                 !false;
             }
             "#;
-            let lexer = Lexer::new(input.into());
-            let mut parser = Parser::new(lexer);
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
 
-            let expected_statements = vec![
-                Statement::Expression(Expression::ConditionalExpression(ConditionalExpression::new(
-                            Expression::InfixOperator(InfixOperator::new(Token::LT,
-                                        Expression::IntegerLiteral(IntegerLiteral::new(4)),
-                                        Expression::IntegerLiteral(IntegerLiteral::new(5))
-                            )),
-                            BlockStatement::new(vec![
-                                Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+        let expected_statements = vec![
+            Statement::Expression(Expression::ConditionalExpression(ConditionalExpression::new(
+                        Expression::InfixOperator(InfixOperator::new(Token::LT,
+                                    Expression::IntegerLiteral(IntegerLiteral::new(4)),
+                                    Expression::IntegerLiteral(IntegerLiteral::new(5))
+                        )),
+                        BlockStatement::new(vec![
+                            Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
                                             Expression::BooleanLiteral(BooleanLiteral::new(true))))),
-                            ]),
-                            Some(BlockStatement::new(vec![
-                                Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+                        ]),
+                        Some(BlockStatement::new(vec![
+                            Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
                                             Expression::BooleanLiteral(BooleanLiteral::new(false))))),
-                            ]))
-                ))),
-                Statement::Expression(Expression::ConditionalExpression(ConditionalExpression::new(
-                            Expression::InfixOperator(InfixOperator::new(Token::GT,
-                                    Expression::Identifier(Identifier::new(2)),
-                                    Expression::FloatLiteral(FloatLiteral::new(4.010))
-                            )),
-                            BlockStatement::new(vec![
-                                Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+                        ]))
+            ))),
+            Statement::Expression(Expression::ConditionalExpression(ConditionalExpression::new(
+                        Expression::InfixOperator(InfixOperator::new(Token::GT,
+                                Expression::Identifier(Identifier::new(2)),
+                                Expression::FloatLiteral(FloatLiteral::new(4.010))
+                        )),
+                        BlockStatement::new(vec![
+                            Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
                                             Expression::BooleanLiteral(BooleanLiteral::new(false))))),
-                            ]),
-                            None
-                ))),
-            ];
+                        ]),
+                        None
+            ))),
+        ];
 
-            let program = parser.parse_program();
-            assert_eq!(&String::from("x"), parser.lookup_literal(2).unwrap());
-            statement_assert_loop(program, expected_statements)
+        let program = parser.parse_program();
+        assert_eq!(&String::from("x"), parser.lookup_literal(2).unwrap());
+        statement_assert_loop(program, expected_statements)
+    }
+
+    #[test]
+    fn test_parse_function() {
+        let input = r#"
+            fn(a, b, c) {
+                return 777;
+            }
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+
+        let expected_statements = vec![
+            Statement::Expression(Expression::FunctionLiteral(FunctionLiteral::new(
+                vec![
+                    Identifier::new(0),
+                    Identifier::new(1),
+                    Identifier::new(2),
+                ],
+                BlockStatement::new(vec![
+                    Statement::Return(ReturnStatement::new(Expression::Temp)),
+                ])
+            ))),
+        ];
+
+        statement_assert_loop(parser.parse_program(), expected_statements)
     }
 
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
