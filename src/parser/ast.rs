@@ -82,9 +82,16 @@ impl ReturnStatement {
 }
 
 trait Parsable {
-    fn parse(parser: &mut Parser) -> Result<impl Parsable, String>;
+    type Output: Parsable;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String>;
+
+    fn parse_with_lhs(parser: &mut Parser, _lhs: Expression) -> Result<Self::Output, String> {
+        Self::parse(parser)
+    }
 }
 
+#[derive(PartialEq, PartialOrd)]
 pub enum Precedence {
     Lowest = 0,
     Equality = 1,
@@ -95,6 +102,18 @@ pub enum Precedence {
     Call = 6,
 }
 
+impl From<&Token> for Precedence {
+    fn from(value: &Token) -> Precedence {
+        match value {
+            Token::Eq | Token::NotEq => Self::Equality,
+            Token::LT | Token::GT => Self::Comparison,
+            Token::Plus | Token::Minus => Self::Sum,
+            Token::Asterisk | Token::Slash => Self::Product,
+            _ => Self::Lowest,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     Temp,
@@ -102,17 +121,38 @@ pub enum Expression {
     IntegerLiteral(IntegerLiteral),
     FloatLiteral(FloatLiteral),
     PrefixOperator(PrefixOperator),
+    InfixOperator(InfixOperator),
 }
 
 impl Expression {
     pub fn parse(parser: &mut Parser, precedence: Precedence) -> Result<Expression, String> {
-        match parser.curr_token() {
+        let mut lhs = match parser.curr_token() {
             Token::Ident(_) => Identifier::parse(parser).map(Expression::Identifier),
             Token::Int(_) => IntegerLiteral::parse(parser).map(Expression::IntegerLiteral),
             Token::Float(_) => FloatLiteral::parse(parser).map(Expression::FloatLiteral),
             Token::Bang | Token::Minus => PrefixOperator::parse(parser).map(Expression::PrefixOperator),
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
+        }?;
+
+        println!("lhs: {:?}, next: {:?}", lhs, parser.peek_token());
+        while !parser.peek_token_is(&Token::Semicolon) && precedence < parser.peek_precedence() {
+            match parser.peek_token() {
+                Token::Plus
+                | Token::Minus
+                | Token::Asterisk
+                | Token::Slash
+                | Token::Eq
+                | Token::NotEq
+                | Token::LT
+                | Token::GT => {
+                    parser.next();
+                    lhs = InfixOperator::parse_with_lhs(parser, lhs).map(Expression::InfixOperator)?;
+                },
+                _ => return Ok(lhs),
+            }
         }
+
+        Ok(lhs)
     }
 }
 
@@ -126,7 +166,9 @@ impl Identifier {
 }
 
 impl Parsable for Identifier {
-    fn parse(parser: &mut Parser) -> Result<Identifier, String> {
+    type Output = Identifier;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
         match parser.curr_token() {
             Token::Ident(id) => Ok(Self(*id)),
             _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
@@ -145,7 +187,9 @@ impl IntegerLiteral {
 }
 
 impl Parsable for IntegerLiteral {
-    fn parse(parser: &mut Parser) -> Result<IntegerLiteral, String> {
+    type Output = IntegerLiteral;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
         match parser.curr_token() {
             Token::Int(key) => {
                 let number = parser.lookup_literal(*key).expect("Integer was not registered by lexer");
@@ -170,7 +214,9 @@ impl FloatLiteral {
 }
 
 impl Parsable for FloatLiteral {
-    fn parse(parser: &mut Parser) -> Result<FloatLiteral, String> {
+    type Output = FloatLiteral;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
         match parser.curr_token() {
             Token::Float(key) => {
                 let number = parser.lookup_literal(*key).expect("Float was not registered by lexer");
@@ -200,20 +246,49 @@ impl PrefixOperator {
 }
 
 impl Parsable for PrefixOperator {
-    fn parse(parser: &mut Parser) -> Result<PrefixOperator, String> {
-        let operator: Token = match parser.curr_token() {
-            Token::Bang => {
-                Token::Bang
-            },
-            Token::Minus => {
-                Token::Minus
-            },
-            _ => unreachable!("Should only attempt to parse a PrefixOperator on a valid prefix operator"),
-        };
+    type Output = PrefixOperator;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        let operator = *parser.curr_token();
 
         parser.next();
         let rhs = Expression::parse(parser, Precedence::Prefix)?;
 
         Ok(PrefixOperator::new(operator, rhs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct InfixOperator {
+    operator: Token,
+    lhs: Box<Expression>,
+    rhs: Box<Expression>,
+}
+
+impl InfixOperator {
+    pub fn new(operator: Token, lhs: Expression, rhs: Expression) -> InfixOperator {
+        Self {
+            operator,
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+        }
+    }
+}
+
+impl Parsable for InfixOperator {
+    type Output = InfixOperator;
+
+    fn parse(_parser: &mut Parser) -> Result<Self::Output, String> {
+        unimplemented!()
+    }
+
+    fn parse_with_lhs(parser: &mut Parser, lhs: Expression) -> Result<Self::Output, String> {
+        let operator = *parser.curr_token();  //  copy
+        let precedence = parser.curr_precedence();
+
+        parser.next();
+        let rhs = Expression::parse(parser, precedence)?;
+
+        Ok(InfixOperator::new(operator, lhs, rhs))
     }
 }

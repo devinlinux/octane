@@ -66,6 +66,10 @@ impl Parser {
     pub fn curr_token(&self) -> &Token {
         &self.curr_token
     }
+
+    pub fn peek_token(&self) -> Token {
+        self.peek_token
+    }
 }
 
 //  Statement parsing
@@ -140,7 +144,7 @@ impl Parser {
         }
     }
 
-    fn peek_token_is(&self, token: &Token) -> bool {
+    pub(super) fn peek_token_is(&self, token: &Token) -> bool {
         match self.peek_token {
             Token::Ident(_) => matches!(token, Token::Ident(_)),
             Token::Int(_) => matches!(token, Token::Int(_)),
@@ -156,10 +160,20 @@ impl Parser {
         }
         false
     }
+
+    pub(super) fn curr_precedence(&self) -> Precedence {
+        Precedence::from(&self.curr_token)
+    }
+
+    pub(super) fn peek_precedence(&self) -> Precedence {
+        Precedence::from(&self.peek_token)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::parser::ast::InfixOperator;
+
     use super::*;
 
     #[test]
@@ -279,8 +293,27 @@ mod tests {
         statement_assert_loop(parser.parse_program(), expected_statements)
     }
 
+    #[test]
+    fn test_parse_infix_operator() {
+        let input = r#"
+            5 - 5;
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+
+        let expected_statements = vec![
+            Statement::Expression(Expression::InfixOperator(InfixOperator::new(Token::Minus,
+                        Expression::IntegerLiteral(IntegerLiteral::new(5)),
+                        Expression::IntegerLiteral(IntegerLiteral::new(5))
+            ))),
+        ];
+
+        statement_assert_loop(parser.parse_program(), expected_statements);
+    }
+
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
         let statements = program.statements();
+        println!("{:?}", statements);
 
         assert_eq!(expected_statements.len(), statements.len());
         for (expected, actual) in expected_statements.iter().zip(statements) {

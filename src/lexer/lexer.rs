@@ -94,7 +94,7 @@ impl Lexer {
                     "return" => Token::Return,
                     _ => {
                         self.register_literal(ident);
-                        Token::Ident(self.ident_idx - 1)
+                        return Token::Ident(self.ident_idx - 1)
                     },
                 }
             },
@@ -215,7 +215,7 @@ mod tests {
 
         for token in tokens {
             let next = lexer.next();
-            println!("expected: {token}, got: {next}");
+            //println!("expected: {token}, got: {next}");
             assert_eq!(token, next);
         }
     }
