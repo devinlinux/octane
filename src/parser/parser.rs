@@ -297,6 +297,8 @@ mod tests {
     fn test_parse_infix_operator() {
         let input = r#"
             5 - 5;
+            7 * 7;
+            1 < 2;
             "#;
         let lexer = Lexer::new(input.into());
         let mut parser = Parser::new(lexer);
@@ -305,6 +307,14 @@ mod tests {
             Statement::Expression(Expression::InfixOperator(InfixOperator::new(Token::Minus,
                         Expression::IntegerLiteral(IntegerLiteral::new(5)),
                         Expression::IntegerLiteral(IntegerLiteral::new(5))
+            ))),
+            Statement::Expression(Expression::InfixOperator(InfixOperator::new(Token::Asterisk,
+                        Expression::IntegerLiteral(IntegerLiteral::new(7)),
+                        Expression::IntegerLiteral(IntegerLiteral::new(7))
+            ))),
+            Statement::Expression(Expression::InfixOperator(InfixOperator::new(Token::LT,
+                        Expression::IntegerLiteral(IntegerLiteral::new(1)),
+                        Expression::IntegerLiteral(IntegerLiteral::new(2)),
             ))),
         ];
 
