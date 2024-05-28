@@ -26,7 +26,6 @@ mod tests {
             3.14;
             "#;
         let mut evaluated_objects = Vec::new();
-
         for line in input.trim().lines() {
             evaluated_objects.push(evaluate_str(line));
         }
@@ -39,6 +38,25 @@ mod tests {
         ];
 
         object_assert_loop(expected_objects, evaluated_objects);
+    }
+
+    #[test]
+    fn test_eval_boolean() {
+        let input = r#"
+            true;
+            false;
+            "#;
+        let mut evaluated_objects = Vec::new();
+        for line in input.trim().lines() {
+            evaluated_objects.push(evaluate_str(line))
+        }
+
+        let expected_objects = vec![
+            Some(Object::Boolean(true)),
+            Some(Object::Boolean(false)),
+        ];
+
+        object_assert_loop(expected_objects, evaluated_objects)
     }
 
     fn evaluate_str(input: &str) -> Option<Object> {
