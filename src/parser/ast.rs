@@ -346,7 +346,9 @@ impl Parsable for ConditionalExpression {
     type Output = ConditionalExpression;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        let mut using_parens = false;
         if parser.peek_token_is(&Token::LParen) {  //  optional parens
+            using_parens = true;
             parser.next();
         }
         parser.next();
@@ -354,17 +356,33 @@ impl Parsable for ConditionalExpression {
         let condition = Expression::parse(parser, Precedence::Lowest)?;
 
         if parser.peek_token_is(&Token::RParen) {  //  optional parens
-            parser.next();
+            if using_parens {
+                parser.next();
+            } else {
+                return Err("Unexpected RParen, you did not use LParen at start of condition".to_string())
+            }
+        } else if using_parens {
+            return Err("Expected RParen because you used LParen at start of condition".to_string())
         }
 
         if !parser.assert_peek(&Token::RSquirly) {
-            parser.push_error(format!("Expected RSquirly, got {}", parser.peek_token()));
             return Err(format!("Expected RSquirly, got {}", parser.peek_token()))
         }
 
         let consequence = BlockStatement::parse(parser)?;
 
-        Ok(ConditionalExpression::new(condition, consequence, None))
+        let mut alternative = None;
+        if parser.peek_token_is(&Token::Else) {
+            parser.next();
+
+            if !parser.assert_peek(&Token::LSquirly) {
+                return Err(format!("Expected RSquirly, got {}", parser.peek_token()))
+            }
+
+            alternative = Some(BlockStatement::parse(parser)?);
+        }
+
+        Ok(ConditionalExpression::new(condition, consequence, alternative))
     }
 }
 

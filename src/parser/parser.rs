@@ -10,7 +10,8 @@ use crate::parser::ast::{
     FloatLiteral,
     BooleanLiteral,
     PrefixOperator,
-    Precedence
+    BlockStatement,
+    Precedence,
 };
 
 pub struct Parser {
@@ -159,7 +160,13 @@ impl Parser {
             self.next();
             return true
         }
+        self.peek_error(token);
         false
+    }
+
+    #[inline]
+    fn peek_error(&mut self, token: &Token) {
+        self.push_error(format!("Expected next token to be {}, got {}", token, self.peek_token));
     }
 
     pub(super) fn curr_precedence(&self) -> Precedence {
@@ -173,7 +180,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::ast::InfixOperator;
+    use crate::parser::ast::{ConditionalExpression, InfixOperator};
 
     use super::*;
 
@@ -335,6 +342,50 @@ mod tests {
         ];
 
         statement_assert_loop(parser.parse_program(), expected_statements);
+    }
+
+    #[test]
+    fn test_parse_conditional() {
+        let input = r#"
+            if (4 < 5) {
+                !true;
+            } else {
+                !false;
+            }
+            if x > 4._010 {
+                !false;
+            }
+            "#;
+            let lexer = Lexer::new(input.into());
+            let mut parser = Parser::new(lexer);
+
+            let expected_statements = vec![
+                Statement::Expression(Expression::ConditionalExpression(ConditionalExpression::new(
+                            Expression::InfixOperator(InfixOperator::new(Token::LT,
+                                        Expression::IntegerLiteral(IntegerLiteral::new(4)),
+                                        Expression::IntegerLiteral(IntegerLiteral::new(5))
+                            )),
+                            BlockStatement::new(vec![
+                                Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+                                            Expression::BooleanLiteral(BooleanLiteral::new(true))))),
+                            ]),
+                            Some(BlockStatement::new(vec![
+                                Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+                                            Expression::BooleanLiteral(BooleanLiteral::new(false))))),
+                            ]))
+                ))),
+                Statement::Expression(Expression::ConditionalExpression(ConditionalExpression::new(
+                            Expression::InfixOperator(InfixOperator::new(Token::GT,
+                                    Expression::Identifier(Identifier::new(2)),
+                                    Expression::FloatLiteral(FloatLiteral::new(4.010))
+                            )),
+                            BlockStatement::new(vec![
+                                Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Bang,
+                                            Expression::BooleanLiteral(BooleanLiteral::new(false))))),
+                            ]),
+                            None
+                ))),
+            ];
     }
 
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
