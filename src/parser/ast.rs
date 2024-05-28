@@ -526,6 +526,7 @@ impl PrefixOperator {
     fn eval_minus(rhs: Object) -> Object {
         match rhs {
             Object::Integer(value) => Object::Integer(-value),
+            Object::Float(value) => Object::Float(-value),
             _ => Object::Error(format!("Cannot eval Minus operator on {:?}", rhs)),
         }
     }

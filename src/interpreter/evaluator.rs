@@ -48,10 +48,56 @@ mod tests {
             "#;
         let mut evaluated_objects = Vec::new();
         for line in input.trim().lines() {
+               evaluated_objects.push(evaluate_str(line))
+        }
+
+        let expected_objects = vec![
+            Object::Boolean(true),
+            Object::Boolean(false),
+        ];
+
+        object_assert_loop(expected_objects, evaluated_objects)
+    }
+
+    #[test]
+    fn test_eval_prefix() {
+        let input = r#"
+            !true
+            !false
+            -3.14
+            --777
+            "#;
+        let mut evaluated_objects = Vec::new();
+        for line in input.trim().lines() {
             evaluated_objects.push(evaluate_str(line))
         }
 
         let expected_objects = vec![
+            Object::Boolean(false),
+            Object::Boolean(true),
+            Object::Float(-3.14),
+            Object::Integer(777),
+        ];
+
+        object_assert_loop(expected_objects, evaluated_objects)
+    }
+
+    #[test]
+    fn test_eval_infix() {
+        let input = r#"
+            2 + 2;
+            5.1 + 5;
+            5 == 5
+            1 != 1
+            "#;
+        let mut evaluated_objects = Vec::new();
+        for line in input.trim().lines() {
+            evaluated_objects.push(evaluate_str(line))
+        }
+
+        let expected_objects = vec![
+            Object::Integer(4),
+            Object::Float(10.1),
             Object::Boolean(true),
             Object::Boolean(false),
         ];
