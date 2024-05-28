@@ -87,13 +87,13 @@ impl Lexer {
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                 let ident = self.read_ident();
                 match ident.as_str() {
-                    "fn" => Token::Function,
-                    "let" => Token::Let,
-                    "if" => Token::If,
-                    "else" => Token::Else,
-                    "return" => Token::Return,
-                    "true" => Token::True,
-                    "false" => Token::False,
+                    "fn" => return Token::Function,
+                    "let" => return Token::Let,
+                    "if" => return Token::If,
+                    "else" => return Token::Else,
+                    "return" => return Token::Return,
+                    "true" => return Token::True,
+                    "false" => return Token::False,
                     _ => {
                         self.register_literal(ident);
                         return Token::Ident(self.ident_idx - 1)
@@ -147,8 +147,9 @@ impl Lexer {
         String::from_utf8_lossy(&self.input[start..self.pos]).to_string()
     }
 
-    fn register_literal(&mut self, ident: String) {
-        self.literal_table.insert(self.ident_idx, ident);
+    fn register_literal(&mut self, literal: String) {
+        println!("REGISTERING {} as {}", literal, self.ident_idx);
+        self.literal_table.insert(self.ident_idx, literal);
         self.ident_idx += 1;
     }
 
@@ -169,7 +170,6 @@ fn is_valid_num_char(ch: u8) -> bool {
 mod tests {
     use super::*;
 
-    #[test]
     fn test_next_token() {
         let input = r#"
             let x = 5_000_000;

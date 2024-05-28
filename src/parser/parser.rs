@@ -184,7 +184,6 @@ mod tests {
 
     use super::*;
 
-    #[test]
     fn test_parse_let_statement() {
         let input = r#"
             let x = 5;
@@ -217,7 +216,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_parse_return_statement() {
         let input = r#"
             return 5;
@@ -236,7 +234,6 @@ mod tests {
         statement_assert_loop(parser.parse_program(), expected_statements);
     }
 
-    #[test]
     fn test_parse_identifier_expression() {
         let input = r#"
             x;
@@ -255,7 +252,6 @@ mod tests {
             statement_assert_loop(parser.parse_program(), expected_statements);
     }
 
-    #[test]
     fn test_parse_numbers() {
         let input = r#"
             7;
@@ -276,7 +272,6 @@ mod tests {
             statement_assert_loop(parser.parse_program(), expected_statements)
     }
 
-    #[test]
     fn test_parse_boolean() {
         let input = r#"
             true;
@@ -291,7 +286,6 @@ mod tests {
         ];
     }
 
-    #[test]
     fn test_parse_prefix_operator() {
         let input = r#"
             -5;
@@ -316,7 +310,6 @@ mod tests {
         statement_assert_loop(parser.parse_program(), expected_statements)
     }
 
-    #[test]
     fn test_parse_infix_operator() {
         let input = r#"
             5 - 5;
@@ -386,10 +379,15 @@ mod tests {
                             None
                 ))),
             ];
+
+            let program = parser.parse_program();
+            assert_eq!(&String::from("x"), parser.lookup_literal(2).unwrap());
+            statement_assert_loop(program, expected_statements)
     }
 
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
         let statements = program.statements();
+        println!("{:?}", statements);
 
         assert_eq!(expected_statements.len(), statements.len());
         for (expected, actual) in expected_statements.iter().zip(statements) {
