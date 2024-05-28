@@ -177,7 +177,6 @@ pub struct Identifier(usize);
 
 impl Identifier {
     pub fn new(value: usize) -> Identifier {
-        println!("Creating an identifier with {}", value);
         Self(value)
     }
 }
@@ -349,7 +348,6 @@ impl Parsable for ConditionalExpression {
     type Output = ConditionalExpression;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
-        println!("PARSING");
         let mut using_parens = false;
         if parser.peek_token_is(&Token::LParen) {  //  optional parens
             using_parens = true;
@@ -363,18 +361,13 @@ impl Parsable for ConditionalExpression {
             if using_parens {
                 parser.next();
             } else {
-                println!("unwanted RParen because no lparen");
                 return Err("Unexpected RParen, you did not use LParen at start of condition".to_string())
             }
         } else if using_parens {
-            println!("wanted RParen because lparen");
             return Err("Expected RParen because you used LParen at start of condition".to_string())
         }
 
         if !parser.assert_peek(&Token::LSquirly) {
-            println!("wanted rsquirly but never got it");
-            println!("CURR TOKEN IS: {}", parser.curr_token());
-            println!("USING TOKENS: {}", using_parens);
             return Err(format!("Expected RSquirly, got {}", parser.peek_token()))
         }
 
@@ -385,7 +378,6 @@ impl Parsable for ConditionalExpression {
             parser.next();
 
             if !parser.assert_peek(&Token::LSquirly) {
-                println!("wanted rsquirly, but never got it1");
                 return Err(format!("Expected RSquirly, got {}", parser.peek_token()))
             }
 
@@ -424,7 +416,6 @@ impl Parsable for BlockStatement {
     type Output = BlockStatement;
 
     fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
-        println!("GOT TO BLOCK");
         let mut statements = Vec::new();
 
         parser.next();

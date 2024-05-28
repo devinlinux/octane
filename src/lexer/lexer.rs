@@ -148,7 +148,6 @@ impl Lexer {
     }
 
     fn register_literal(&mut self, literal: String) {
-        println!("REGISTERING {} as {}", literal, self.ident_idx);
         self.literal_table.insert(self.ident_idx, literal);
         self.ident_idx += 1;
     }
@@ -170,6 +169,7 @@ fn is_valid_num_char(ch: u8) -> bool {
 mod tests {
     use super::*;
 
+    #[test]
     fn test_next_token() {
         let input = r#"
             let x = 5_000_000;
