@@ -98,22 +98,44 @@ impl Parser {
         if !self.assert_peek(&Token::Assign) {
             return None
         }
+        self.next();
 
-        while !self.curr_token_is(&Token::Semicolon) {
-            self.next();
+        let value = match Expression::parse(self, Precedence::Lowest) {
+            Ok(value) => value,
+            Err(err) => {
+                self.push_error(err);
+                return None;
+            },
+        };
+
+        if !self.peek_token_is(&Token::Semicolon) {
+            self.push_error(format!("Expected semicolon, got {}", self.peek_token));
+            return None;
         }
+        self.next();
 
-        Some(LetStatement::new(name, Expression::Temp))
+        Some(LetStatement::new(name, value))
     }
 
     fn parse_return_statement(&mut self) -> Option<ReturnStatement> {
         self.next();
 
-        while !self.curr_token_is(&Token::Semicolon) {
-            self.next();
-        }
+        let value = match Expression::parse(self, Precedence::Lowest) {
+            Ok(value) => value,
+            Err(err) => {
+                println!("{}", err);
+                self.push_error(err);
+                return None;
+            },
+        };
 
-        Some(ReturnStatement::new(Expression::Temp))
+        if !self.peek_token_is(&Token::Semicolon) {
+            self.push_error(format!("Expected semicolon, got {}", self.peek_token));
+            return None;
+        }
+        self.next();
+
+        Some(ReturnStatement::new(value))
     }
 }
 
@@ -196,9 +218,9 @@ mod tests {
         let mut parser = Parser::new(lexer);
 
         let expected_statements = vec![
-            Statement::Let(LetStatement::new(0, Expression::Temp)),
-            Statement::Let(LetStatement::new(2, Expression::Temp)),
-            Statement::Let(LetStatement::new(4, Expression::Temp)),
+            Statement::Let(LetStatement::new(0, Expression::IntegerLiteral(IntegerLiteral::new(5)))),
+            Statement::Let(LetStatement::new(2, Expression::IntegerLiteral(IntegerLiteral::new(7)))),
+            Statement::Let(LetStatement::new(4, Expression::IntegerLiteral(IntegerLiteral::new(42)))),
         ];
 
         let expected_names = vec![
@@ -229,9 +251,9 @@ mod tests {
         let mut parser = Parser::new(lexer);
 
         let expected_statements = vec![
-            Statement::Return(ReturnStatement::new(Expression::Temp)),
-            Statement::Return(ReturnStatement::new(Expression::Temp)),
-            Statement::Return(ReturnStatement::new(Expression::Temp)),
+            Statement::Return(ReturnStatement::new(Expression::IntegerLiteral(IntegerLiteral::new(5)))),
+            Statement::Return(ReturnStatement::new(Expression::IntegerLiteral(IntegerLiteral::new(7)))),
+            Statement::Return(ReturnStatement::new(Expression::IntegerLiteral(IntegerLiteral::new(42)))),
         ];
 
         statement_assert_loop(parser.parse_program(), expected_statements);
@@ -411,7 +433,7 @@ mod tests {
                     Identifier::new(2),
                 ],
                 BlockStatement::new(vec![
-                    Statement::Return(ReturnStatement::new(Expression::Temp)),
+                    Statement::Return(ReturnStatement::new(Expression::IntegerLiteral(IntegerLiteral::new(777)))),
                 ])
             ))),
         ];
