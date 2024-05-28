@@ -134,7 +134,6 @@ impl Expression {
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
         }?;
 
-        println!("lhs: {:?}, next: {:?}", lhs, parser.peek_token());
         while !parser.peek_token_is(&Token::Semicolon) && precedence < parser.peek_precedence() {
             match parser.peek_token() {
                 Token::Plus

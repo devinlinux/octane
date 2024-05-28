@@ -313,7 +313,6 @@ mod tests {
 
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
         let statements = program.statements();
-        println!("{:?}", statements);
 
         assert_eq!(expected_statements.len(), statements.len());
         for (expected, actual) in expected_statements.iter().zip(statements) {
