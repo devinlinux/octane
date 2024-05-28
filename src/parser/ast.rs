@@ -109,6 +109,7 @@ impl From<&Token> for Precedence {
             Token::LT | Token::GT => Self::Comparison,
             Token::Plus | Token::Minus => Self::Sum,
             Token::Asterisk | Token::Slash => Self::Product,
+            Token::LParen => Precedence::Call,
             _ => Self::Lowest,
         }
     }
@@ -125,6 +126,7 @@ pub enum Expression {
     PrefixOperator(PrefixOperator),
     InfixOperator(InfixOperator),
     ConditionalExpression(ConditionalExpression),
+    CallExpression(CallExpression),
 }
 
 impl Expression {
@@ -153,6 +155,10 @@ impl Expression {
                 | Token::GT => {
                     parser.next();
                     lhs = InfixOperator::parse_with_lhs(parser, lhs).map(Expression::InfixOperator)?;
+                },
+                Token::LParen => {
+                    parser.next();
+                    lhs = CallExpression::parse_with_lhs(parser, lhs).map(Expression::CallExpression)?;
                 },
                 _ => return Ok(lhs),
             }
@@ -481,5 +487,56 @@ impl Parsable for BlockStatement {
         }
 
         Ok(Self::new(statements))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct CallExpression {
+    function: Box<Expression>,
+    args: Vec<Expression>,
+}
+
+impl CallExpression {
+    pub fn new(function: Expression, args: Vec<Expression>) -> CallExpression {
+        Self {
+            function: Box::new(function),
+            args,
+        }
+    }
+
+    fn parse_call_args(parser: &mut Parser) -> Result<Vec<Expression>, String> {
+        let mut args = Vec::new();
+
+        if parser.peek_token_is(&Token::RParen) {
+            parser.next();
+            return Ok(args);
+        }
+
+        parser.next();
+        args.push(Expression::parse(parser, Precedence::Lowest)?);
+
+        while parser.peek_token_is(&Token::Comma) {
+            parser.next();
+            parser.next();
+            args.push(Expression::parse(parser, Precedence::Lowest)?);
+        }
+
+        if !parser.assert_peek(&Token::RParen) {
+            return Err(format!("Expected RParen, got {}", parser.peek_token()));
+        };
+
+        Ok(args)
+    }
+}
+
+impl Parsable for CallExpression {
+    type Output = CallExpression;
+
+    fn parse(_parser: &mut Parser) -> Result<Self::Output, String> {
+        unimplemented!()
+    }
+
+    fn parse_with_lhs(parser: &mut Parser, func: Expression) -> Result<Self::Output, String> {
+        Ok(CallExpression::new(func, CallExpression::parse_call_args(parser)?))
     }
 }

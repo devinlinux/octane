@@ -181,7 +181,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::ast::{ConditionalExpression, InfixOperator};
+    use crate::parser::ast::{CallExpression, ConditionalExpression, InfixOperator};
 
     use super::*;
 
@@ -417,6 +417,38 @@ mod tests {
         ];
 
         statement_assert_loop(parser.parse_program(), expected_statements)
+    }
+
+    #[test]
+    fn test_parse_function_call() {
+        let input = r#"
+            call(a, b, c);
+            call(2 + 2);
+            "#;
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+
+        let expected_statements = vec![
+            Statement::Expression(Expression::CallExpression(CallExpression::new(
+                Expression::Identifier(Identifier::new(0)),
+                vec![
+                    Expression::Identifier(Identifier::new(1)),
+                    Expression::Identifier(Identifier::new(2)),
+                    Expression::Identifier(Identifier::new(3)),
+                ],
+            ))),
+            Statement::Expression(Expression::CallExpression(CallExpression::new(
+                Expression::Identifier(Identifier::new(4)),
+                vec![
+                    Expression::InfixOperator(InfixOperator::new(Token::Plus,
+                            Expression::IntegerLiteral(IntegerLiteral::new(2)),
+                            Expression::IntegerLiteral(IntegerLiteral::new(2))
+                    )),
+                ],
+            ))),
+        ];
+
+        statement_assert_loop(parser.parse_program(), expected_statements);
     }
 
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
