@@ -133,6 +133,7 @@ impl Expression {
             Token::Float(_) => FloatLiteral::parse(parser).map(Expression::FloatLiteral),
             Token::True | Token::False => BooleanLiteral::parse(parser).map(Expression::BooleanLiteral),
             Token::Bang | Token::Minus => PrefixOperator::parse(parser).map(Expression::PrefixOperator),
+            Token::LParen => Expression::parse_grouped_expression(parser),
             _ => Err(format!("No parser available for token {}", parser.curr_token())),
         }?;
 
@@ -154,6 +155,17 @@ impl Expression {
         }
 
         Ok(lhs)
+    }
+
+    fn parse_grouped_expression(parser: &mut Parser) -> Result<Expression, String> {
+        parser.next();
+        let expression = Expression::parse(parser, Precedence::Lowest);
+
+        if parser.assert_peek(&Token::RParen) {
+            expression
+        } else {
+            Err(format!("Expected RParen, got: {}", parser.peek_token()))
+        }
     }
 }
 
@@ -232,6 +244,24 @@ impl Parsable for FloatLiteral {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct BooleanLiteral(bool);
+
+#[cfg(test)]
+impl BooleanLiteral {
+    pub fn new(value: bool) -> BooleanLiteral {
+        Self(value)
+    }
+}
+
+impl Parsable for BooleanLiteral {
+    type Output = BooleanLiteral;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        Ok(Self(parser.curr_token_is(&Token::True)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct PrefixOperator {
     operator: Token,
     rhs: Box<Expression>,
@@ -291,23 +321,5 @@ impl Parsable for InfixOperator {
         let rhs = Expression::parse(parser, precedence)?;
 
         Ok(InfixOperator::new(operator, lhs, rhs))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct BooleanLiteral(bool);
-
-#[cfg(test)]
-impl BooleanLiteral {
-    pub fn new(value: bool) -> BooleanLiteral {
-        Self(value)
-    }
-}
-
-impl Parsable for BooleanLiteral {
-    type Output = BooleanLiteral;
-
-    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
-        Ok(Self(parser.curr_token_is(&Token::True)))
     }
 }

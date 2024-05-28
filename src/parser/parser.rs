@@ -154,7 +154,7 @@ impl Parser {
         }
     }
 
-    fn assert_peek(&mut self, token: &Token) -> bool {
+    pub(super) fn assert_peek(&mut self, token: &Token) -> bool {
         if self.peek_token_is(token) {
             self.next();
             return true
