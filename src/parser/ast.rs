@@ -5,11 +5,11 @@ use crate::object::Object;
 pub trait Evaluate {
     fn eval(&self) -> Object;
 
-    fn eval_with_rhs(&self, _rhs: &Object) -> Object {
+    fn eval_with_rhs(&self, _rhs: Object) -> Object {
         self.eval()
     }
 
-    fn eval_with_lhs_and_rhs(&self, _lhs: &Object, _rhs: &Object) -> Object {
+    fn eval_with_lhs_and_rhs(&self, _lhs: Object, _rhs: Object) -> Object {
         self.eval()
     }
 }
@@ -327,8 +327,13 @@ impl Evaluate for Expression {
             Self::BooleanLiteral(boolean) => boolean.eval(),
             Self::PrefixOperator(op) => {
                 let rhs = op.rhs.eval();
-                op.eval_with_rhs(&rhs)
+                op.eval_with_rhs(rhs)
             },
+            Self::InfixOperator(op) => {
+                let lhs = op.lhs.eval();
+                let rhs = op.rhs.eval();
+                op.eval_with_lhs_and_rhs(lhs, rhs)
+            }
             _ => Object::Error(format!("Cannot eval expression {}", self)),
         }
     }
@@ -501,7 +506,7 @@ impl Evaluate for PrefixOperator {
         unimplemented!()
     }
 
-    fn eval_with_rhs(&self, rhs: &Object) -> Object {
+    fn eval_with_rhs(&self, rhs: Object) -> Object {
         match self.operator {
             Token::Bang => PrefixOperator::eval_bang(rhs),
             Token::Minus => PrefixOperator::eval_minus(rhs),
@@ -511,14 +516,14 @@ impl Evaluate for PrefixOperator {
 }
 
 impl PrefixOperator {
-    fn eval_bang(rhs: &Object) -> Object {
+    fn eval_bang(rhs: Object) -> Object {
         match rhs {
             Object::Boolean(value) => Object::Boolean(!value),
             _ => Object::Error(format!("Cannot eval Bang operator on {:?}", rhs)),
         }
     }
 
-    fn eval_minus(rhs: &Object) -> Object {
+    fn eval_minus(rhs: Object) -> Object {
         match rhs {
             Object::Integer(value) => Object::Integer(-value),
             _ => Object::Error(format!("Cannot eval Minus operator on {:?}", rhs)),
@@ -564,6 +569,40 @@ impl ParseExpression for InfixOperator {
         let rhs = Expression::parse(parser, precedence)?;
 
         Ok(InfixOperator::new(operator, lhs, rhs))
+    }
+}
+
+impl Evaluate for InfixOperator {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_lhs_and_rhs(&self, lhs: Object, rhs: Object) -> Object {
+        match (&lhs, &rhs) {
+            (Object::Integer(_), Object::Integer(_))
+            | (Object::Float(_), Object::Float(_))
+            | (Object::Integer(_), Object::Float(_))
+            | (Object::Float(_), Object::Integer(_)) => {
+                InfixOperator::eval_infix_expression(self.operator, lhs, rhs)
+            },
+            _ => Object::Error(format!("Cannot use infix operator {} on non-numbers", self.operator))
+        }
+    }
+}
+
+impl InfixOperator {
+    fn eval_infix_expression(operator: Token, lhs: Object, rhs: Object) -> Object {
+        match operator {
+            Token::Plus => lhs + rhs,
+            Token::Minus => lhs - rhs,
+            Token::Asterisk => lhs * rhs,
+            Token::Slash => lhs / rhs,
+            Token::GT => Object::Boolean(lhs > rhs),
+            Token::LT => Object::Boolean(lhs < rhs),
+            Token::Eq => Object::Boolean(lhs == rhs),
+            Token::NotEq => Object::Boolean(lhs != rhs),
+            _ => unreachable!("Should not attempt infix evaluation on unsupported types")
+        }
     }
 }
 
