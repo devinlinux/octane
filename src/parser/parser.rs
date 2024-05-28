@@ -56,7 +56,7 @@ impl Parser {
         program
     }
 
-    fn push_error(&mut self, msg: String) {
+    pub(super) fn push_error(&mut self, msg: String) {
         self.errors.push(msg);
     }
 
@@ -75,7 +75,7 @@ impl Parser {
 
 //  Statement parsing
 impl Parser {
-    fn parse_statement(&mut self) -> Option<Statement> {
+    pub(super) fn parse_statement(&mut self) -> Option<Statement> {
         match self.curr_token {
             Token::Let => self.parse_let_statement().map(Statement::Let),
             Token::Return => self.parse_return_statement().map(Statement::Return),

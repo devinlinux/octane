@@ -123,6 +123,7 @@ pub enum Expression {
     BooleanLiteral(BooleanLiteral),
     PrefixOperator(PrefixOperator),
     InfixOperator(InfixOperator),
+    ConditionalExpression(ConditionalExpression),
 }
 
 impl Expression {
@@ -321,5 +322,77 @@ impl Parsable for InfixOperator {
         let rhs = Expression::parse(parser, precedence)?;
 
         Ok(InfixOperator::new(operator, lhs, rhs))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ConditionalExpression {
+    condition: Box<Expression>,
+    consequence: BlockStatement,
+    alternative: Option<BlockStatement>,
+}
+
+impl ConditionalExpression {
+    pub fn new(condition: Expression, consequence: BlockStatement, alternative: Option<BlockStatement>) -> ConditionalExpression {
+        Self {
+            condition: Box::new(condition),
+            consequence,
+            alternative,
+        }
+    }
+}
+
+impl Parsable for ConditionalExpression {
+    type Output = ConditionalExpression;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        if parser.peek_token_is(&Token::LParen) {  //  optional parens
+            parser.next();
+        }
+        parser.next();
+
+        let condition = Expression::parse(parser, Precedence::Lowest)?;
+
+        if parser.peek_token_is(&Token::RParen) {  //  optional parens
+            parser.next();
+        }
+
+        if !parser.assert_peek(&Token::RSquirly) {
+            parser.push_error(format!("Expected RSquirly, got {}", parser.peek_token()));
+            return Err(format!("Expected RSquirly, got {}", parser.peek_token()))
+        }
+
+        let consequence = BlockStatement::parse(parser)?;
+
+        Ok(ConditionalExpression::new(condition, consequence, None))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BlockStatement(Vec<Statement>);
+
+impl BlockStatement {
+    pub fn new(statements: Vec<Statement>) -> BlockStatement {
+        Self(statements)
+    }
+}
+
+impl Parsable for BlockStatement {
+    type Output = BlockStatement;
+
+    fn parse(parser: &mut Parser) -> Result<Self::Output, String> {
+        let mut statements = Vec::new();
+
+        parser.next();
+
+        while !parser.curr_token_is(&Token::RBrace) && !parser.curr_token_is(&Token::Eof) {
+            let statement = parser.parse_statement();
+            if statement.is_some() {
+                statements.push(statement.unwrap());
+            }
+            parser.next();
+        }
+
+        Ok(Self::new(statements))
     }
 }
