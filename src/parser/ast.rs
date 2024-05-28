@@ -52,6 +52,7 @@ pub enum Statement {
     Expression(Expression),
 }
 
+#[cfg(test)]
 impl Statement {
     pub fn try_into_let(&self) -> Result<&LetStatement, &Self> {
         if let Self::Let(stmt) = self {
@@ -103,7 +104,10 @@ impl LetStatement {
             value,
         }
     }
+}
 
+#[cfg(test)]
+impl LetStatement {
     pub fn name(&self) -> usize {
         self.name.0
     }
