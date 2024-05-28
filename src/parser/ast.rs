@@ -3,7 +3,15 @@ use crate::parser::Parser;
 use crate::object::Object;
 
 pub trait Evaluate {
-    fn eval(&self) -> Option<Object>;
+    fn eval(&self) -> Object;
+
+    fn eval_with_rhs(&self, _rhs: &Object) -> Object {
+        self.eval()
+    }
+
+    fn eval_with_lhs_and_rhs(&self, _lhs: &Object, _rhs: &Object) -> Object {
+        self.eval()
+    }
 }
 
 pub struct Program {
@@ -11,8 +19,8 @@ pub struct Program {
 }
 
 impl Evaluate for Program {
-    fn eval(&self) -> Option<Object> {
-        let mut result = None;
+    fn eval(&self) -> Object {
+        let mut result = Object::Error("No statements to evaluate".to_string());
         for statement in &self.statements {
             result = statement.eval();
         }
@@ -74,10 +82,10 @@ impl std::fmt::Display for Statement {
 }
 
 impl Evaluate for Statement {
-    fn eval(&self) -> Option<Object> {
+    fn eval(&self) -> Object {
         match self {
             Self::Expression(exp) => exp.eval(),
-            _ => None,
+            _ => Object::Error(format!("Cannot eval statement {}", self)),
         }
     }
 }
@@ -312,12 +320,16 @@ impl std::fmt::Display for Expression {
 }
 
 impl Evaluate for Expression {
-    fn eval(&self) -> Option<Object> {
+    fn eval(&self) -> Object {
         match self {
             Self::IntegerLiteral(int) => int.eval(),
             Self::FloatLiteral(float) => float.eval(),
             Self::BooleanLiteral(boolean) => boolean.eval(),
-            _ => None,
+            Self::PrefixOperator(op) => {
+                let rhs = op.rhs.eval();
+                op.eval_with_rhs(&rhs)
+            },
+            _ => Object::Error(format!("Cannot eval expression {}", self)),
         }
     }
 }
@@ -376,8 +388,8 @@ impl ParseExpression for IntegerLiteral {
 }
 
 impl Evaluate for IntegerLiteral {
-    fn eval(&self) -> Option<Object> {
-        Some(Object::Integer(self.0))
+    fn eval(&self) -> Object {
+        Object::Integer(self.0)
     }
 }
 
@@ -415,8 +427,8 @@ impl ParseExpression for FloatLiteral {
 }
 
 impl Evaluate for FloatLiteral {
-    fn eval(&self) -> Option<Object> {
-        Some(Object::Float(self.0))
+    fn eval(&self) -> Object {
+        Object::Float(self.0)
     }
 }
 
@@ -445,8 +457,8 @@ impl ParseExpression for BooleanLiteral {
 }
 
 impl Evaluate for BooleanLiteral {
-    fn eval(&self) -> Option<Object> {
-        Some(Object::Boolean(self.0))
+    fn eval(&self) -> Object {
+        Object::Boolean(self.0)
     }
 }
 
@@ -481,6 +493,36 @@ impl ParseExpression for PrefixOperator {
         let rhs = Expression::parse(parser, Precedence::Prefix)?;
 
         Ok(PrefixOperator::new(operator, rhs))
+    }
+}
+
+impl Evaluate for PrefixOperator {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_rhs(&self, rhs: &Object) -> Object {
+        match self.operator {
+            Token::Bang => PrefixOperator::eval_bang(rhs),
+            Token::Minus => PrefixOperator::eval_minus(rhs),
+            _ => Object::Error(format!("Expected Bang or Minus, got {:?}", rhs)),
+        }
+    }
+}
+
+impl PrefixOperator {
+    fn eval_bang(rhs: &Object) -> Object {
+        match rhs {
+            Object::Boolean(value) => Object::Boolean(!value),
+            _ => Object::Error(format!("Cannot eval Bang operator on {:?}", rhs)),
+        }
+    }
+
+    fn eval_minus(rhs: &Object) -> Object {
+        match rhs {
+            Object::Integer(value) => Object::Integer(-value),
+            _ => Object::Error(format!("Cannot eval Minus operator on {:?}", rhs)),
+        }
     }
 }
 

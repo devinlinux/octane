@@ -6,7 +6,7 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
-    pub fn eval(program: Program) -> Option<Object> {
+    pub fn eval(program: Program) -> Object {
         program.eval()
     }
 }
@@ -31,10 +31,10 @@ mod tests {
         }
 
         let expected_objects = vec![
-            Some(Object::Integer(5)),
-            Some(Object::Integer(777)),
-            Some(Object::Integer(42)),
-            Some(Object::Float(3.14)),
+            Object::Integer(5),
+            Object::Integer(777),
+            Object::Integer(42),
+            Object::Float(3.14),
         ];
 
         object_assert_loop(expected_objects, evaluated_objects);
@@ -52,14 +52,14 @@ mod tests {
         }
 
         let expected_objects = vec![
-            Some(Object::Boolean(true)),
-            Some(Object::Boolean(false)),
+            Object::Boolean(true),
+            Object::Boolean(false),
         ];
 
         object_assert_loop(expected_objects, evaluated_objects)
     }
 
-    fn evaluate_str(input: &str) -> Option<Object> {
+    fn evaluate_str(input: &str) -> Object {
         let lexer = Lexer::new(input.into());
         let mut parser = Parser::new(lexer);
 
@@ -69,15 +69,11 @@ mod tests {
         Evaluator::eval(program)
     }
 
-    fn object_assert_loop(expected: Vec<Option<Object>>, actual: Vec<Option<Object>>) {
+    fn object_assert_loop(expected: Vec<Object>, actual: Vec<Object>) {
         assert_eq!(expected.len(), actual.len());
 
         for (e, a) in expected.iter().zip(&actual) {
-            match (e, a) {
-                (Some(ex), Some(ac)) => assert_eq!(ex, ac),
-                (None, None) => (),
-                _ => panic!("Expected {:?}, got {:?}", e, a),
-            }
+            assert_eq!(e, a);
         }
     }
 }
