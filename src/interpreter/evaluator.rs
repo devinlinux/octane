@@ -89,6 +89,7 @@ mod tests {
             5.1 + 5;
             5 == 5
             1 != 1
+            (5 + 5) - 2 * 3;
             "#;
         let mut evaluated_objects = Vec::new();
         for line in input.trim().lines() {
@@ -100,6 +101,7 @@ mod tests {
             Object::Float(10.1),
             Object::Boolean(true),
             Object::Boolean(false),
+            Object::Integer(4),
         ];
 
         object_assert_loop(expected_objects, evaluated_objects)
