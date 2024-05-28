@@ -1,8 +1,24 @@
 use crate::lexer::Token;
 use crate::parser::Parser;
+use crate::object::Object;
+
+pub trait Evaluate {
+    fn eval(&self) -> Option<Object>;
+}
 
 pub struct Program {
     statements: Vec<Statement>,
+}
+
+impl Evaluate for Program {
+    fn eval(&self) -> Option<Object> {
+        let mut result = None;
+        for statement in &self.statements {
+            result = statement.eval();
+        }
+
+        result
+    }
 }
 
 impl Default for Program {
@@ -52,6 +68,15 @@ impl std::fmt::Display for Statement {
             Self::Let(stmt) => write!(f, "{stmt}"),
             Self::Return(stmt) => write!(f, "{stmt}"),
             Self::Expression(exp) => write!(f, "{exp}"),
+        }
+    }
+}
+
+impl Evaluate for Statement {
+    fn eval(&self) -> Option<Object> {
+        match self {
+            Self::Expression(exp) => exp.eval(),
+            _ => None,
         }
     }
 }
@@ -282,6 +307,16 @@ impl std::fmt::Display for Expression {
     }
 }
 
+impl Evaluate for Expression {
+    fn eval(&self) -> Option<Object> {
+        match self {
+            Self::IntegerLiteral(int) => int.eval(),
+            Self::FloatLiteral(float) => float.eval(),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Identifier(usize);
 
@@ -335,6 +370,12 @@ impl ParseExpression for IntegerLiteral {
     }
 }
 
+impl Evaluate for IntegerLiteral {
+    fn eval(&self) -> Option<Object> {
+        Some(Object::Integer(self.0))
+    }
+}
+
 impl std::fmt::Display for IntegerLiteral {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "IntegerLiteral {{ {} }}", self.0)
@@ -365,6 +406,12 @@ impl ParseExpression for FloatLiteral {
             },
             _ => unreachable!("Should only attempt to parse FloatLiteral on Float token"),
         }
+    }
+}
+
+impl Evaluate for FloatLiteral {
+    fn eval(&self) -> Option<Object> {
+        Some(Object::Float(self.0))
     }
 }
 
