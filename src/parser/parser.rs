@@ -6,13 +6,6 @@ use crate::parser::ast::{
     LetStatement,
     ReturnStatement,
     Expression,
-    Identifier,
-    IntegerLiteral,
-    FloatLiteral,
-    BooleanLiteral,
-    FunctionLiteral,
-    PrefixOperator,
-    BlockStatement,
     Precedence,
 };
 
@@ -154,9 +147,19 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::ast::{CallExpression, ConditionalExpression, InfixOperator};
-
     use super::*;
+    use crate::parser::ast::{
+        Identifier,
+        IntegerLiteral,
+        FloatLiteral,
+        BooleanLiteral,
+        FunctionLiteral,
+        PrefixOperator,
+        BlockStatement,
+        CallExpression,
+        ConditionalExpression,
+        InfixOperator,
+    };
 
     #[test]
     fn test_parse_let_statement() {
@@ -198,8 +201,7 @@ mod tests {
             return 7;
             return 42;
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Return(ReturnStatement::new(Expression::IntegerLiteral(IntegerLiteral::new(5)))),
@@ -207,7 +209,7 @@ mod tests {
             Statement::Return(ReturnStatement::new(Expression::IntegerLiteral(IntegerLiteral::new(42)))),
         ];
 
-        statement_assert_loop(parser.parse_program(), expected_statements);
+        statement_assert_loop(program, expected_statements);
     }
 
     #[test]
@@ -217,16 +219,15 @@ mod tests {
             y;
             z;
             "#;
-            let lexer = Lexer::new(input.into());
-            let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
-            let expected_statements = vec![
-                Statement::Expression(Expression::Identifier(Identifier::new(0))),
-                Statement::Expression(Expression::Identifier(Identifier::new(1))),
-                Statement::Expression(Expression::Identifier(Identifier::new(2))),
-            ];
+        let expected_statements = vec![
+            Statement::Expression(Expression::Identifier(Identifier::new(0))),
+            Statement::Expression(Expression::Identifier(Identifier::new(1))),
+            Statement::Expression(Expression::Identifier(Identifier::new(2))),
+        ];
 
-            statement_assert_loop(parser.parse_program(), expected_statements);
+        statement_assert_loop(program, expected_statements);
     }
 
     #[test]
@@ -237,17 +238,16 @@ mod tests {
             42;
             1_000_000;
             "#;
-            let lexer = Lexer::new(input.into());
-            let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
-            let expected_statements = vec![
-                Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(7))),
-                Statement::Expression(Expression::FloatLiteral(FloatLiteral::new(3.14))),
-                Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(42))),
-                Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(1000000))),
-            ];
+        let expected_statements = vec![
+            Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(7))),
+            Statement::Expression(Expression::FloatLiteral(FloatLiteral::new(3.14))),
+            Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(42))),
+            Statement::Expression(Expression::IntegerLiteral(IntegerLiteral::new(1000000))),
+        ];
 
-            statement_assert_loop(parser.parse_program(), expected_statements)
+        statement_assert_loop(program, expected_statements)
     }
 
     #[test]
@@ -256,13 +256,14 @@ mod tests {
             true;
             false;
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Expression(Expression::BooleanLiteral(BooleanLiteral::new(true))),
             Statement::Expression(Expression::BooleanLiteral(BooleanLiteral::new(false))),
         ];
+
+        statement_assert_loop(program, expected_statements)
     }
 
     #[test]
@@ -272,8 +273,7 @@ mod tests {
             !bad;
             -42;
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Expression(Expression::PrefixOperator(PrefixOperator::new(Token::Minus,
@@ -287,7 +287,7 @@ mod tests {
             ))),
         ];
 
-        statement_assert_loop(parser.parse_program(), expected_statements)
+        statement_assert_loop(program, expected_statements)
     }
 
     #[test]
@@ -297,8 +297,7 @@ mod tests {
             7 * 7;
             1 < 2;
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Expression(Expression::InfixOperator(InfixOperator::new(Token::Minus,
@@ -315,7 +314,7 @@ mod tests {
             ))),
         ];
 
-        statement_assert_loop(parser.parse_program(), expected_statements);
+        statement_assert_loop(program, expected_statements);
     }
 
     #[test]
@@ -373,8 +372,7 @@ mod tests {
                 return 777;
             }
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Expression(Expression::FunctionLiteral(FunctionLiteral::new(
@@ -389,7 +387,7 @@ mod tests {
             ))),
         ];
 
-        statement_assert_loop(parser.parse_program(), expected_statements)
+        statement_assert_loop(program, expected_statements)
     }
 
     #[test]
@@ -398,8 +396,7 @@ mod tests {
             call(a, b, c);
             call(2 + 2);
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Expression(Expression::CallExpression(CallExpression::new(
@@ -421,7 +418,13 @@ mod tests {
             ))),
         ];
 
-        statement_assert_loop(parser.parse_program(), expected_statements);
+        statement_assert_loop(program, expected_statements);
+    }
+
+    fn parse_input(input: &str) -> Program {
+        let lexer = Lexer::new(input.into());
+        let mut parser = Parser::new(lexer);
+        parser.parse_program()
     }
 
     fn statement_assert_loop(program: Program, expected_statements: Vec<Statement>) {
