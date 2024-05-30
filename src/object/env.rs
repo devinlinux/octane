@@ -12,6 +12,10 @@ impl Environment {
         }
     }
 
+    pub fn set(&mut self, name: String, value: Object) {
+        self.store.insert(name, value);
+    }
+
     pub fn get(&self, name: String) -> Option<&Object> {
         match self.store.get(&name) {
             Some(obj) => Some(&obj),
