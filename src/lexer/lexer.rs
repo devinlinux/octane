@@ -155,6 +155,10 @@ impl Lexer {
     pub fn lookup_literal(&self, key: usize) -> Option<&String> {
         self.literal_table.get(&key)
     }
+
+    pub fn take_lookup_table(&mut self) -> HashMap<usize, String> {
+        std::mem::take(&mut self.literal_table)
+    }
 }
 
 fn is_valid_var_char(ch: u8) -> bool {

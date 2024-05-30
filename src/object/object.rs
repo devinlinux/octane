@@ -1,7 +1,7 @@
 use std::ops::{ Add, Div, Mul, Sub };
 use std::cmp::Ordering;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Object {
     Skip,
     Error(String),

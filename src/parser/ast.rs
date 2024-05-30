@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::lexer::Token;
 use crate::parser::Parser;
 use crate::object::{ Object, Environment };
@@ -20,6 +21,7 @@ pub trait Evaluate {
 
 pub struct Program {
     statements: Vec<Statement>,
+    lookup_table: HashMap<usize, String>,
 }
 
 impl Program {
@@ -30,11 +32,16 @@ impl Program {
     pub fn statements(&self) -> &Vec<Statement> {
         &self.statements
     }
+
+    pub fn set_lookup_table(&mut self, lookup_table: HashMap<usize, String>) {
+        self.lookup_table = lookup_table;
+    }
 }
 
 impl Default for Program {
     fn default() -> Program {
         Self {
+            lookup_table: HashMap::new(),
             statements: Vec::new(),
         }
     }
@@ -57,6 +64,8 @@ impl Evaluate for Program {
     }
 
     fn eval_with_env(&self, env: &mut Environment) -> Object {
+        env.set_lookup_table(self.lookup_table.clone());
+
         let mut result = Object::Error("No statements to evaluate".to_string());
         for statement in &self.statements {
             result = statement.eval_with_env(env);
@@ -98,8 +107,8 @@ impl Evaluate for Statement {
     fn eval_with_env(&self, env: &mut Environment) -> Object {
         match self {
             Self::Expression(exp) => exp.eval_with_env(env),
-            Self::Return(ret) => ret.eval(),
-            _ => Object::Error(format!("Cannot eval statement {}", self)),
+            Self::Return(ret) => ret.eval_with_env(env),
+            Self::Let(var) => var.eval_with_env(env),
         }
     }
 }
@@ -145,12 +154,6 @@ impl LetStatement {
     }
 }
 
-impl std::fmt::Display for LetStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "let {{ id: {} value: {} }}", self.name, self.value)
-    }
-}
-
 impl ParseStatement for LetStatement {
     type Output = Self;
 
@@ -184,6 +187,29 @@ impl ParseStatement for LetStatement {
         parser.next();
 
         Some(Self::new(name, value))
+    }
+}
+
+impl Evaluate for LetStatement {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        let value = self.value.eval_with_env(env);
+        match value {
+            Object::Error(_) => value,
+            _ => {
+                env.set(env.lookup_ident(self.name.0).unwrap().clone(), value);
+                Object::Skip
+            },
+        }
+    }
+}
+
+impl std::fmt::Display for LetStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "let {{ id: {} value: {} }}", self.name, self.value)
     }
 }
 
@@ -226,7 +252,11 @@ impl ParseStatement for ReturnStatement {
 
 impl Evaluate for ReturnStatement {
     fn eval(&self) -> Object {
-        Object::Return(Box::new(self.value.eval()))
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        Object::Return(Box::new(self.value.eval_with_env(env)))
     }
 }
 
@@ -360,15 +390,16 @@ impl Evaluate for Expression {
             Self::FloatLiteral(float) => float.eval(),
             Self::BooleanLiteral(boolean) => boolean.eval(),
             Self::PrefixOperator(op) => {
-                let rhs = op.rhs.eval();
+                let rhs = op.rhs.eval_with_env(env);
                 op.eval_with_rhs(rhs)
             },
             Self::InfixOperator(op) => {
-                let lhs = op.lhs.eval();
-                let rhs = op.rhs.eval();
+                let lhs = op.lhs.eval_with_env(env);
+                let rhs = op.rhs.eval_with_env(env);
                 op.eval_with_lhs_and_rhs(lhs, rhs)
             }
             Self::ConditionalExpression(conditional) => conditional.eval_with_env(env),
+            Self::Identifier(ident) => ident.eval_with_env(env),
             _ => Object::Error(format!("Cannot eval expression {}", self)),
         }
     }
@@ -390,6 +421,23 @@ impl ParseExpression for Identifier {
         match parser.curr_token() {
             Token::Ident(id) => Ok(Self(*id)),
             _ => Err(format!("Expected identifier, got {}", parser.curr_token())),
+        }
+    }
+}
+
+impl Evaluate for Identifier {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        match env.get(self.0) {
+            Some(ptr) => {
+                unsafe {  //  reading a raw pointer
+                    ptr.read()
+                }
+            },
+            _ => Object::Error(format!("Identifier {} not found", env.lookup_ident(self.0).unwrap_or(&String::from("IDENT NOT REGISTERED")))),
         }
     }
 }

@@ -48,6 +48,7 @@ impl Parser {
             self.next();
         }
 
+        program.set_lookup_table(self.lexer.take_lookup_table());
         program
     }
 
@@ -168,8 +169,7 @@ mod tests {
             let y = 7;
             let z = 42;
             "#;
-        let lexer = Lexer::new(input.into());
-        let mut parser = Parser::new(lexer);
+        let program = parse_input(input);
 
         let expected_statements = vec![
             Statement::Let(LetStatement::new(0, Expression::IntegerLiteral(IntegerLiteral::new(5)))),
@@ -177,21 +177,7 @@ mod tests {
             Statement::Let(LetStatement::new(4, Expression::IntegerLiteral(IntegerLiteral::new(42)))),
         ];
 
-        let expected_names = vec![
-            "x",
-            "y",
-            "z",
-        ];
-
-        let program = parser.parse_program();
-        let statements = program.statements();
-
-        assert_eq!(expected_statements.len(), statements.len());
-        for ((expected_statement, expected_name), actual) in expected_statements.iter().zip(&expected_names).zip(statements) {
-            assert_eq!(expected_statement, actual);
-            let name = parser.lexer.lookup_literal(actual.try_into_let().expect("Could not convert to let statement").name()).expect("Identifier was not registered by lexer");
-            assert_eq!(name, expected_name);
-        }
+        statement_assert_loop(program, expected_statements)
     }
 
     #[test]
@@ -361,7 +347,6 @@ mod tests {
         ];
 
         let program = parser.parse_program();
-        assert_eq!(&String::from("x"), parser.lookup_literal(2).unwrap());
         statement_assert_loop(program, expected_statements)
     }
 

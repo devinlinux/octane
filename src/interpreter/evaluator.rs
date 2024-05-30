@@ -1,8 +1,8 @@
+use std::collections::HashMap;
 use crate::parser::ast::{ Evaluate, Program };
 use crate::object::{ Object, Environment };
 
 pub struct Evaluator {
-
 }
 
 impl Evaluator {
@@ -142,6 +142,27 @@ mod tests {
         let expected_objects = vec![
             Object::Return(Box::new(Object::Integer(5))),
             Object::Return(Box::new(Object::Boolean(true))),
+        ];
+
+        object_assert_loop(expected_objects, evaluated_objects)
+    }
+
+    #[test]
+    fn test_eval_let() {
+        let input = r#"
+            let a = 5; a;
+            let b = true; b;
+            let c = --777; c;
+            "#;
+        let mut evaluated_objects = Vec::new();
+        for line in input.trim().lines() {
+            evaluated_objects.push(evaluate_str(line))
+        }
+
+        let expected_objects = vec![
+            Object::Integer(5),
+            Object::Boolean(true),
+            Object::Integer(777),
         ];
 
         object_assert_loop(expected_objects, evaluated_objects)
