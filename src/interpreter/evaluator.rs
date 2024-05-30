@@ -1,5 +1,5 @@
 use crate::parser::ast::{ Evaluate, Program };
-use crate::object::Object;
+use crate::object::{ Object, Environment };
 
 pub struct Evaluator {
 
@@ -7,7 +7,7 @@ pub struct Evaluator {
 
 impl Evaluator {
     pub fn eval(program: Program) -> Object {
-        program.eval()
+        program.eval_with_env(&mut Environment::new())
     }
 }
 

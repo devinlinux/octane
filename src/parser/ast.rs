@@ -1,9 +1,13 @@
 use crate::lexer::Token;
 use crate::parser::Parser;
-use crate::object::Object;
+use crate::object::{ Object, Environment };
 
 pub trait Evaluate {
     fn eval(&self) -> Object;
+
+    fn eval_with_env(&self, _env: &mut Environment) -> Object {
+        self.eval()
+    }
 
     fn eval_with_rhs(&self, _rhs: Object) -> Object {
         self.eval()
@@ -49,9 +53,13 @@ impl From<Vec<Statement>> for Program {
 
 impl Evaluate for Program {
     fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
         let mut result = Object::Error("No statements to evaluate".to_string());
         for statement in &self.statements {
-            result = statement.eval();
+            result = statement.eval_with_env(env);
         }
 
         result
@@ -82,22 +90,26 @@ impl Statement {
     }
 }
 
+impl Evaluate for Statement {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        match self {
+            Self::Expression(exp) => exp.eval_with_env(env),
+            Self::Return(ret) => ret.eval(),
+            _ => Object::Error(format!("Cannot eval statement {}", self)),
+        }
+    }
+}
+
 impl std::fmt::Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Let(stmt) => write!(f, "{stmt}"),
             Self::Return(stmt) => write!(f, "{stmt}"),
             Self::Expression(exp) => write!(f, "{exp}"),
-        }
-    }
-}
-
-impl Evaluate for Statement {
-    fn eval(&self) -> Object {
-        match self {
-            Self::Expression(exp) => exp.eval(),
-            Self::Return(ret) => ret.eval(),
-            _ => Object::Error(format!("Cannot eval statement {}", self)),
         }
     }
 }
@@ -339,6 +351,10 @@ impl std::fmt::Display for Expression {
 
 impl Evaluate for Expression {
     fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
         match self {
             Self::IntegerLiteral(int) => int.eval(),
             Self::FloatLiteral(float) => float.eval(),
@@ -352,7 +368,7 @@ impl Evaluate for Expression {
                 let rhs = op.rhs.eval();
                 op.eval_with_lhs_and_rhs(lhs, rhs)
             }
-            Self::ConditionalExpression(conditional) => conditional.eval(),
+            Self::ConditionalExpression(conditional) => conditional.eval_with_env(env),
             _ => Object::Error(format!("Cannot eval expression {}", self)),
         }
     }
@@ -695,14 +711,16 @@ impl ParseExpression for ConditionalExpression {
 
 impl Evaluate for ConditionalExpression {
     fn eval(&self) -> Object {
-        let condition = self.condition.eval();
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        let condition = self.condition.eval_with_env(env);
         match condition {
-            Object::Boolean(true) => self.consequence.eval(),
-            Object::Boolean(false) => {
-                match &self.alternative {
-                    Some(block) => block.eval(),
-                    None => Object::Skip,
-                }
+            Object::Boolean(true) => self.consequence.eval_with_env(env),
+            Object::Boolean(false) => match &self.alternative {
+                Some(block) => block.eval_with_env(env),
+                None => Object::Skip,
             }
             _ => Object::Error(format!("Conditional condition should result in boolean, got {:?}", condition)),
         }
@@ -818,10 +836,14 @@ impl ParseExpression for BlockStatement {
 
 impl Evaluate for BlockStatement {
     fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
         let mut result = Object::Error("No statements to evaluate".to_string());
 
         for statement in &self.0 {
-            result = statement.eval();
+            result = statement.eval_with_env(env);
             match result {
                 Object::Return(obj) => return *obj,
                 Object::Error(err) => return Object::Error(err),
