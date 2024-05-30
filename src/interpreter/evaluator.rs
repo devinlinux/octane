@@ -128,6 +128,25 @@ mod tests {
         object_assert_loop(expected_objects, evaluated_objects)
     }
 
+    #[test]
+    fn test_eval_return() {
+        let input = r#"
+            return 5;
+            return true;
+            "#;
+        let mut evaluated_objects = Vec::new();
+        for line in input.trim().lines() {
+            evaluated_objects.push(evaluate_str(line))
+        }
+
+        let expected_objects = vec![
+            Object::Return(Box::new(Object::Integer(5))),
+            Object::Return(Box::new(Object::Boolean(true))),
+        ];
+
+        object_assert_loop(expected_objects, evaluated_objects)
+    }
+
     fn evaluate_str(input: &str) -> Object {
         let lexer = Lexer::new(input.into());
         let mut parser = Parser::new(lexer);

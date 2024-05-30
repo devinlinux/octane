@@ -8,6 +8,7 @@ pub enum Object {
     Integer(i64),
     Float(f64),
     Boolean(bool),
+    Return(Box<Object>),
 }
 
 impl Add for Object {

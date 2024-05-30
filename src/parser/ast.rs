@@ -96,6 +96,7 @@ impl Evaluate for Statement {
     fn eval(&self) -> Object {
         match self {
             Self::Expression(exp) => exp.eval(),
+            Self::Return(ret) => ret.eval(),
             _ => Object::Error(format!("Cannot eval statement {}", self)),
         }
     }
@@ -187,12 +188,6 @@ impl ReturnStatement {
     }
 }
 
-impl std::fmt::Display for ReturnStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "return {{ value: {} }}", self.value)
-    }
-}
-
 impl ParseStatement for ReturnStatement {
     type Output = Self;
 
@@ -214,6 +209,18 @@ impl ParseStatement for ReturnStatement {
         parser.next();
 
         Some(Self::new(value))
+    }
+}
+
+impl Evaluate for ReturnStatement {
+    fn eval(&self) -> Object {
+        Object::Return(Box::new(self.value.eval()))
+    }
+}
+
+impl std::fmt::Display for ReturnStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "return {{ value: {} }}", self.value)
     }
 }
 
@@ -815,6 +822,11 @@ impl Evaluate for BlockStatement {
 
         for statement in &self.0 {
             result = statement.eval();
+            match result {
+                Object::Return(obj) => return *obj,
+                Object::Error(err) => return Object::Error(err),
+                _ => continue,
+            }
         }
 
         result
