@@ -107,6 +107,27 @@ mod tests {
         object_assert_loop(expected_objects, evaluated_objects)
     }
 
+    #[test]
+    fn test_eval_conditional() {
+        let input = r#"
+            if (false) { 5; }
+            if (true) { 7; } else { 6; }
+            if (false) { 6; } else { 7; }
+            "#;
+        let mut evaluated_objects = Vec::new();
+        for line in input.trim().lines() {
+            evaluated_objects.push(evaluate_str(line))
+        }
+
+        let expected_objects = vec![
+            Object::Skip,
+            Object::Integer(7),
+            Object::Integer(7),
+        ];
+
+        object_assert_loop(expected_objects, evaluated_objects)
+    }
+
     fn evaluate_str(input: &str) -> Object {
         let lexer = Lexer::new(input.into());
         let mut parser = Parser::new(lexer);

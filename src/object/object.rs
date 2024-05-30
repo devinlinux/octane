@@ -3,10 +3,11 @@ use std::cmp::Ordering;
 
 #[derive(Debug, PartialEq)]
 pub enum Object {
+    Skip,
+    Error(String),
     Integer(i64),
     Float(f64),
     Boolean(bool),
-    Error(String),
 }
 
 impl Add for Object {

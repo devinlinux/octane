@@ -18,14 +18,13 @@ pub struct Program {
     statements: Vec<Statement>,
 }
 
-impl Evaluate for Program {
-    fn eval(&self) -> Object {
-        let mut result = Object::Error("No statements to evaluate".to_string());
-        for statement in &self.statements {
-            result = statement.eval();
-        }
+impl Program {
+    pub fn add_statement(&mut self, statement: Statement) {
+        self.statements.push(statement);
+    }
 
-        result
+    pub fn statements(&self) -> &Vec<Statement> {
+        &self.statements
     }
 }
 
@@ -37,13 +36,25 @@ impl Default for Program {
     }
 }
 
-impl Program {
-    pub fn add_statement(&mut self, statement: Statement) {
-        self.statements.push(statement);
-    }
+impl From<Vec<Statement>> for Program {
+    fn from(value: Vec<Statement>) -> Self {
+        let mut program = Self::default();
+        for statement in value  {
+            program.add_statement(statement);
+        }
 
-    pub fn statements(&self) -> &Vec<Statement> {
-        &self.statements
+        program
+    }
+}
+
+impl Evaluate for Program {
+    fn eval(&self) -> Object {
+        let mut result = Object::Error("No statements to evaluate".to_string());
+        for statement in &self.statements {
+            result = statement.eval();
+        }
+
+        result
     }
 }
 
@@ -334,6 +345,7 @@ impl Evaluate for Expression {
                 let rhs = op.rhs.eval();
                 op.eval_with_lhs_and_rhs(lhs, rhs)
             }
+            Self::ConditionalExpression(conditional) => conditional.eval(),
             _ => Object::Error(format!("Cannot eval expression {}", self)),
         }
     }
@@ -674,6 +686,22 @@ impl ParseExpression for ConditionalExpression {
     }
 }
 
+impl Evaluate for ConditionalExpression {
+    fn eval(&self) -> Object {
+        let condition = self.condition.eval();
+        match condition {
+            Object::Boolean(true) => self.consequence.eval(),
+            Object::Boolean(false) => {
+                match &self.alternative {
+                    Some(block) => block.eval(),
+                    None => Object::Skip,
+                }
+            }
+            _ => Object::Error(format!("Conditional condition should result in boolean, got {:?}", condition)),
+        }
+    }
+}
+
 impl std::fmt::Display for ConditionalExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Conditional: {{\n\tcondition: {}\n\tconsequence: {}\n\talternative: {:?}\n}}", self.condition, self.consequence, self.alternative)
@@ -778,6 +806,18 @@ impl ParseExpression for BlockStatement {
         }
 
         Ok(Self::new(statements))
+    }
+}
+
+impl Evaluate for BlockStatement {
+    fn eval(&self) -> Object {
+        let mut result = Object::Error("No statements to evaluate".to_string());
+
+        for statement in &self.0 {
+            result = statement.eval();
+        }
+
+        result
     }
 }
 
