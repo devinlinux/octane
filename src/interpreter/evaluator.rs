@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::parser::ast::{ Evaluate, Program };
 use crate::object::{ Object, Environment };
 

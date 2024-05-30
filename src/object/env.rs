@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use super::Object;
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct Environment {
     lookup_table: HashMap<usize, String>,
     store: HashMap<String, Object>,
+    context: Option<Box<Environment>>,
 }
 
 impl Environment {
@@ -11,6 +13,15 @@ impl Environment {
         Self {
             lookup_table: HashMap::new(),
             store: HashMap::new(),
+            context: None,
+        }
+    }
+
+    pub fn new_with_context(context: Environment) -> Environment {
+        Self {
+            lookup_table: HashMap::new(),
+            store: HashMap::new(),
+            context: Some(Box::new(context)),
         }
     }
 
@@ -18,11 +29,15 @@ impl Environment {
         self.store.insert(name, value);
     }
 
-    pub fn get(&self, name: usize) -> Option<*const Object> {
+    pub fn get(&self, name: usize) -> Option<Object> {
         match self.lookup_table.get(&name) {
-            Some(binding) => {
-                self.store.get(binding).map(|obj| obj as *const Object)  //  get the raw pointer
-            },
+            Some(binding) => match self.store.get(binding) {
+                Some(obj) => Some(obj.clone()),
+                None => match &self.context {
+                    Some(ctx) => ctx.get(name),
+                    None => None,
+                }
+            }
             None => None,
         }
     }

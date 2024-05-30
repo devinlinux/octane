@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::lexer::Token;
 use crate::parser::Parser;
-use crate::object::{ Object, Environment };
+use crate::object::{ Object, Function, Environment };
 
 pub trait Evaluate {
     fn eval(&self) -> Object;
@@ -81,22 +81,11 @@ pub trait ParseStatement {
     fn parse(parser: &mut Parser) -> Option<Self::Output>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
     Expression(Expression),
-}
-
-#[cfg(test)]
-impl Statement {
-    pub fn try_into_let(&self) -> Result<&LetStatement, &Self> {
-        if let Self::Let(stmt) = self {
-            Ok(stmt)
-        } else {
-            Err(self)
-        }
-    }
 }
 
 impl Evaluate for Statement {
@@ -123,7 +112,7 @@ impl std::fmt::Display for Statement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LetStatement {
     name: Identifier,
     value: Expression,
@@ -213,7 +202,7 @@ impl std::fmt::Display for LetStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
     value: Expression,
 }
@@ -300,7 +289,7 @@ impl From<&Token> for Precedence {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
@@ -400,12 +389,13 @@ impl Evaluate for Expression {
             }
             Self::ConditionalExpression(conditional) => conditional.eval_with_env(env),
             Self::Identifier(ident) => ident.eval_with_env(env),
-            _ => Object::Error(format!("Cannot eval expression {}", self)),
+            Self::FunctionLiteral(func) => func.eval_with_env(env),
+            Self::CallExpression(call) => call.eval_with_env(env),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Identifier(usize);
 
 impl Identifier {
@@ -432,11 +422,7 @@ impl Evaluate for Identifier {
 
     fn eval_with_env(&self, env: &mut Environment) -> Object {
         match env.get(self.0) {
-            Some(ptr) => {
-                unsafe {  //  reading a raw pointer
-                    ptr.read()
-                }
-            },
+            Some(obj) => obj,
             _ => Object::Error(format!("Identifier {} not found", env.lookup_ident(self.0).unwrap_or(&String::from("IDENT NOT REGISTERED")))),
         }
     }
@@ -448,7 +434,7 @@ impl std::fmt::Display for Identifier {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IntegerLiteral(i64);
 
 #[cfg(test)]
@@ -487,7 +473,7 @@ impl std::fmt::Display for IntegerLiteral {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FloatLiteral(f64);
 
 #[cfg(test)]
@@ -526,7 +512,7 @@ impl std::fmt::Display for FloatLiteral {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BooleanLiteral(bool);
 
 #[cfg(test)]
@@ -556,7 +542,7 @@ impl std::fmt::Display for BooleanLiteral {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PrefixOperator {
     operator: Token,
     rhs: Box<Expression>,
@@ -621,7 +607,7 @@ impl std::fmt::Display for PrefixOperator {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct InfixOperator {
     operator: Token,
     lhs: Box<Expression>,
@@ -696,7 +682,7 @@ impl std::fmt::Display for InfixOperator {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ConditionalExpression {
     condition: Box<Expression>,
     consequence: BlockStatement,
@@ -781,7 +767,7 @@ impl std::fmt::Display for ConditionalExpression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FunctionLiteral {
     parameters: Vec<Identifier>,
     body: BlockStatement,
@@ -847,13 +833,23 @@ impl ParseExpression for FunctionLiteral {
     }
 }
 
+impl Evaluate for FunctionLiteral {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        Object::Function(Function::new(self.parameters.clone(), self.body.clone(), env.clone()))
+    }
+}
+
 impl std::fmt::Display for FunctionLiteral {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Fn: {{\n\tparams: {:?}\n\tbody: {}\n}}", self.parameters, self.body)
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement(Vec<Statement>);
 
 impl BlockStatement {
@@ -916,7 +912,7 @@ impl std::fmt::Display for BlockStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CallExpression {
     function: Box<Expression>,
     args: Vec<Expression>,
@@ -953,6 +949,20 @@ impl CallExpression {
 
         Ok(args)
     }
+
+    fn apply_function(function: Object, args: Vec<Object>) -> Object {
+        match function {
+            Object::Function(func) => {
+                let mut env = Environment::new_with_context(func.env());
+                for (param, arg) in func.parameters().iter().zip(args) {
+                    env.set(env.lookup_ident(param.0).unwrap().clone(), arg);
+                }
+
+                func.body().eval_with_env(&mut env)
+            },
+            _ => Object::Error(format!("{:?} is not a function", function))
+        }
+    }
 }
 
 impl ParseExpression for CallExpression {
@@ -964,6 +974,27 @@ impl ParseExpression for CallExpression {
 
     fn parse_with_lhs(parser: &mut Parser, func: Expression) -> Result<Self::Output, String> {
         Ok(CallExpression::new(func, CallExpression::parse_call_args(parser)?))
+    }
+}
+
+impl Evaluate for CallExpression {
+    fn eval(&self) -> Object {
+        unimplemented!()
+    }
+
+    fn eval_with_env(&self, env: &mut Environment) -> Object {
+        let function = self.function.eval_with_env(env);
+        if let Object::Error(_) = function {
+            return function;
+        }
+        let args: Vec<Object> = self.args.iter().map(|exp| exp.eval_with_env(env)).collect();
+        for arg in &args {
+            if let Object::Error(err) = arg {
+                return Object::Error(err.to_string())
+            }
+        }
+
+        Self::apply_function(function, args)
     }
 }
 

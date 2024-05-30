@@ -1,5 +1,8 @@
 use std::ops::{ Add, Div, Mul, Sub };
 use std::cmp::Ordering;
+use crate::parser::ast::{ Identifier, BlockStatement };
+
+use super::Environment;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Object {
@@ -9,6 +12,7 @@ pub enum Object {
     Float(f64),
     Boolean(bool),
     Return(Box<Object>),
+    Function(Function),
 }
 
 impl Add for Object {
@@ -82,5 +86,34 @@ impl PartialOrd for Object {
             (Object::Float(lhs), Object::Integer(rhs)) => lhs.partial_cmp(&(*rhs as f64)),
             _ => None,
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Function {
+    parameters: Vec<Identifier>,
+    body: BlockStatement,
+    env: Environment,
+}
+
+impl Function {
+    pub fn new(parameters: Vec<Identifier>, body: BlockStatement, env: Environment) -> Function {
+        Self {
+            parameters,
+            body,
+            env,
+        }
+    }
+
+    pub fn parameters(&self) -> &[Identifier] {
+        &self.parameters
+    }
+
+    pub fn body(&self) -> &BlockStatement {
+        &self.body
+    }
+
+    pub fn env(&self) -> Environment {
+        self.env.clone()
     }
 }
